@@ -46,13 +46,14 @@ BLACKLIST=(
   '^docker compose down -v( .*)?$'
 
   # Download and execute
-  '^curl .*\\|.*$'
-  '^wget .*\\|.*$'
+  '^curl .*\|.*$'
+  '^wget .*\|.*$'
 )
 
 ALLOWED=true
 
 for pattern in "${BLACKLIST[@]}"; do
+  echo "TEST: $pattern" >&2
   if echo "$COMMAND" | grep -Eq "$pattern"; then
     ALLOWED=false
     break

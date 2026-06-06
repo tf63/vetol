@@ -38,6 +38,7 @@ color: cyan
 ### 1. Prepare
 
 - セッションの初めでは、Serena MCPを次の手順でアクティベートしてください
+  - **注意: SerenaはSkillではないので注意してください**
   1. ToolSearch で `mcp__serena__activate_project` のスキーマを取得する
   2. スキーマがロードされてから `mcp__serena__activate_project({ project_name: "vetol" })` を呼び出す
   3. Serena MCPのinitial_instructionは設定していないので無視して良いです
@@ -90,3 +91,18 @@ color: cyan
 ### Serena MCP
 
 - ファイルの検索やシンボルの検索など、Serena MCPを使用してコードベースを調査してください
+- 利用可能なツールは以下に限定されます
+
+```
+[
+  "activate_project",
+  "find_declaration",
+  "find_implementations",
+  "find_referencing_symbols",
+  "find_symbol",
+  "get_diagnostics_for_file",
+  "get_symbols_overview",
+  "initial_instructions",
+  "search_for_pattern",
+]
+```

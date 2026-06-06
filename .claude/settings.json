@@ -25,7 +25,6 @@
       "Bash(gh pr view:*)",
       "Bash(gh pr diff:*)",
       "Bash(gh pr list:*)",
-      "Bash(playwright-cli:*)",
       "mcp__serena__*"
     ],
     "deny": ["Bash(curl *)", "Read(./.env)", "Read(./.env.*)"]
