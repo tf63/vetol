@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "enabledMcpjsonServers": ["serena"],
+  "disabledMcpjsonServers": [],
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(tree:*)",
+      "Bash(grep:*)",
+      "Bash(touch:*)",
+      "Bash(cp -n:*)",
+      "Bash(cat:*)",
+      "Bash(mv:*)",
+      "Bash(mkdir:*)",
+      "Bash(find:*)",
+      "Bash(sed:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(trash:*)",
+      "Bash(golangci-lint:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git branch -a)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr diff:*)",
+      "Bash(gh pr list:*)",
+      "Bash(playwright-cli:*)",
+      "mcp__serena__*"
+    ],
+    "deny": ["Bash(curl *)", "Read(./.env)", "Read(./.env.*)"]
+  },
+  "companyAnnouncements": ["Welcome to the Vetol project!"],
+  "includeCoAuthoredBy": false,
+  "plansDirectory": ".claude/plans",
+  "autoMemoryDirectory": ".claude/memories"
+}
