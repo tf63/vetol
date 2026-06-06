@@ -39,7 +39,7 @@ color: cyan
 
 - セッションの初めでは、Serena MCPを次の手順でアクティベートしてください
   1. ToolSearch で `mcp__serena__activate_project` のスキーマを取得する
-  2. スキーマがロードされてから `mcp__serena__activate_project({ project_name: "retro" })` を呼び出す
+  2. スキーマがロードされてから `mcp__serena__activate_project({ project_name: "vetol" })` を呼び出す
   3. Serena MCPのinitial_instructionは設定していないので無視して良いです
 
 ### 2. Implement
