@@ -1,0 +1,43 @@
+version: "2"
+
+run:
+  timeout: 2m
+
+# https://golangci-lint.run/usage/linters
+linters:
+  enable:
+    - errcheck # エラーがチェックされているかを確認
+    - nilerr # nilを返す必要がないのにnilエラーを返していないか
+    - govet # Go標準の静的解析
+    - staticcheck # 広範囲な静的解析 (SAxxxx)
+    - unused # 未使用のコードを検出
+    - unparam # 未使用の関数引数を検出
+    - ineffassign # 効果のない代入を検出
+    - revive # `golint` の後継。命名規則やコード構造など
+    - modernize # 古いGoコードを新しいスタイルに変換
+  settings:
+    revive:
+      rules:
+        - name: package-comments
+          disabled: true
+
+# https://golangci-lint.run/usage/formatters/
+formatters:
+  enable:
+    - gci
+    - gofmt
+    - gofumpt
+    - goimports
+    - golines
+    - swaggo
+#
+# issues:
+#     max-issues-per-linter: 50 # Maximum issues count per one linter.
+#     max-same-issues: 3 # Maximum count of issues with the same text.
+#     uniq-by-line: false # Make issues output unique by line.
+#     new: false # Show only new issues:
+#     new-from-merge-base: "" # Show only new issues created after the best common ancestor (merge-base against HEAD).
+#     new-from-rev: "" # Show only new issues created after git revision `REV`.
+#     new-from-patch: "" # Show only new issues created in git patch with set file path.
+#     whole-files: false # Show issues in any part of update files (requires new-from-rev or new-from-patch).
+#     fix: false # Fix found issues (if it's supported by the linter).

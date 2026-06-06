@@ -1,0 +1,34 @@
+pre-commit:
+  piped: true
+  commands:
+    golang-ci-lint:
+      priority: 1
+      glob: "*.go"
+      run: |
+        golangci-lint run --fix
+      stage_fixed: true
+      skip:
+        - merge
+        - rebase
+
+    prettier:
+      priority: 2
+      glob: "*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc,md,mdx,yml,yaml,css,html}"
+      run: |
+        prettier {staged_files} --write
+      stage_fixed: true
+      skip:
+        - merge
+        - rebase
+
+post-merge:
+  commands:
+    go:
+      glob: "go.sum"
+      run: go mod tidy
+
+commit-msg:
+  commands:
+    commitlint:
+      run: |
+        commitlint --edit {1}

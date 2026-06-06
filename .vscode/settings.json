@@ -1,0 +1,36 @@
+{
+  "files.insertFinalNewline": true,
+  "editor.tabSize": 2,
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {},
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[toml]": {
+    "editor.defaultFormatter": "tamasfe.even-better-toml"
+  },
+  "[go]": {
+    "editor.defaultFormatter": "golang.go"
+  },
+  "[go.mod]": {
+    "editor.defaultFormatter": "golang.go"
+  },
+  "[go.work]": {
+    "editor.defaultFormatter": "golang.go"
+  },
+  "go.lintTool": "golangci-lint-v2",
+  "go.lintFlags": ["--path-mode=abs", "--fast-only"],
+  "go.lintOnSave": "package",
+  "go.formatTool": "custom",
+  "go.formatFlags": ["fmt", "--stdin"],
+  "go.toolsManagement.checkForUpdates": "local",
+  "go.useLanguageServer": true,
+  "go.goroot": "~/.local/share/mise/installs/go/1.26.0",
+  "go.alternateTools": {
+    "customFormatter": "~/.local/share/mise/installs/go/1.26.0/bin/golangci-lint",
+    "gopls": "~/.local/share/mise/installs/go/1.26.0/bin/gopls",
+    "dlv": "~/.local/share/mise/installs/go/1.26.0/bin/dlv",
+    "go": "~/.local/share/mise/installs/go/1.26.0/bin/go"
+  },
+  "gopls": {
+    "ui.newGoFileHeader": false
+  }
+}

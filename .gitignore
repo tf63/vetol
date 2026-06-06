@@ -1,0 +1,111 @@
+# ----------------------------------------------------------------
+# Go
+# ----------------------------------------------------------------
+
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Output directories
+bin/
+dist/
+out/
+tmp/
+
+# Go workspace files
+go.work
+go.work.sum
+
+# Vendor directory (if you are not committing vendored packages)
+vendor/
+
+# IDE/editor directories and files
+.idea/
+*.swp
+*.swo
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# ----------------------------------------------------------------
+# Node
+# ----------------------------------------------------------------
+
+# dependencies
+node_modules/
+.yarn/
+.pnpm-store/
+.pnp
+.pnp.js
+
+# testing
+coverage/
+
+# next.js
+.next/
+.swc/
+out/
+build/
+migrations/
+storybook-static/
+
+# hooks
+.husky/
+
+# misc
+.DS_Store
+*.pem
+
+# files
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# env files
+*.local
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# turbo
+.turbo/
+
+# ui
+dist/
+dist-ssr/
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# vercel
+.vercel/
+
+# playwright
+test-results/
+blob-report/
+playwright-report/
+playwright/.cache/
