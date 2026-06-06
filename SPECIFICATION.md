@@ -1,0 +1,183 @@
+# Vetol Specification
+
+## Overview
+
+Vetol is a CLI tool that analyzes bash command strings using Abstract Syntax Tree (AST) parsing and performs strict security validation to detect forbidden commands regardless of how they are nested or obfuscated.
+
+**Module**: `github.com/tf63/vetol`
+**Language**: Go 1.26
+**CLI Command**: `vetol`
+
+## Purpose
+
+Provide robust and strict security validation for bash commands that cannot be bypassed through command chaining, substitution, or other complex syntax patterns.
+
+**Problem Being Solved:**
+Simple string matching-based validation is insufficient and can be bypassed:
+
+- Command chaining: `ls && rm -rf /` - bypasses simple "rm" prefix check
+- Command substitution: `cat "$(rm -rf /)"` - hides forbidden command inside variable expansion
+- Pipelines and other shell constructs - can conceal forbidden operations
+
+**Solution:**
+
+- Parse bash command strings into a complete Abstract Syntax Tree (AST) using `mvdan.cc/sh/v3/syntax`
+- Traverse the entire AST to detect all commands, including those nested in:
+  - Command chains (`&&`, `||`, `;`)
+  - Pipelines (`|`)
+  - Command substitution (`$()`, backticks)
+  - Other shell constructs
+- Perform strict validation against whitelist or blacklist rules at the AST level
+- Reject any command string containing forbidden commands, regardless of nesting depth or context
+
+## Tools
+
+### Dependencies
+
+- **mvdan.cc/sh/v3/syntax**: Bash command parser and AST builder
+- Go 1.26 or later
+
+## CLI
+
+### Command: vetol
+
+The main entry point that provides bash command validation functionality.
+
+```bash
+vetol [OPTIONS] <COMMAND_STRING>
+```
+
+### Subcommands
+
+- `check` - Analyze and validate a bash command string
+
+## Usage
+
+### Check Command with Whitelist Mode
+
+Parse and validate a bash command string against an allowed command list.
+
+```bash
+# Single commands
+vetol check --mode whitelist --rules ls,cat,grep "ls -la /tmp"
+
+# Multi-command sequences
+vetol check -m whitelist -r "docker compose exec go fmt,ls,cat" "docker compose exec go fmt ./..."
+```
+
+### Check Command with Blacklist Mode
+
+Parse and validate a bash command string against a forbidden command list.
+
+```bash
+# Single commands
+vetol check --mode blacklist --rules rm,dd,mkfs "cat /etc/passwd"
+
+# Multi-command sequences
+vetol check -m blacklist -r "docker compose exec rm,rm -rf" "docker compose exec rm -rf /"
+```
+
+### Rule Format
+
+Rules are comma-separated, where each rule can be:
+
+- **Single command**: `ls`, `cat`, `rm`, `dd`
+- **Multi-command sequence**: `docker compose exec rm`, `docker compose exec go fmt`
+
+Multi-command rules match only when the exact sequence of commands appears in the AST.
+
+**Examples:**
+
+- Rule `docker compose exec rm` matches: `docker compose exec rm -rf /` ✓
+- Rule `docker compose exec rm` does NOT match: `docker rm -rf /` ✗
+- Rule `docker compose exec rm` does NOT match: `docker compose exec go fmt` ✗
+
+### Options
+
+- `--mode <mode>`, `-m <mode>`: Security validation mode (required)
+  - `whitelist`: Only allow explicitly permitted commands
+  - `blacklist`: Allow all commands except explicitly forbidden ones
+- `--rules <RULES>`, `-r <RULES>`: Comma-separated list of rules for validation (required)
+  - Each rule can be a single command or a space-separated sequence of commands
+  - In whitelist mode: list of allowed command/sequences
+  - In blacklist mode: list of forbidden command/sequences
+- `<COMMAND_STRING>`: The bash command string to validate (positional argument)
+
+## Config
+
+### Configuration Methods
+
+Rules can be specified via one of two methods (not both):
+
+1. **Command-line options**: `--mode` and `--rules`
+2. **Configuration file**: `--config` (JSON format only)
+
+If `--config` is specified, `--mode` and `--rules` must NOT be provided. Specifying both will result in an error.
+
+### Configuration File Format (JSON)
+
+```json
+{
+  "mode": "blacklist",
+  "rules": [
+    "docker compose exec rm",
+    "docker compose exec mkfs",
+    "docker run rm -rf",
+    "rm -rf",
+    "dd"
+  ]
+}
+```
+
+### Usage Examples
+
+**Using command-line options:**
+
+```bash
+vetol check -m blacklist -r "rm,dd" "cat /etc/passwd"
+```
+
+**Using configuration file:**
+
+```bash
+vetol check --config rules.json "docker compose exec rm -rf /"
+```
+
+**Error cases:**
+
+```bash
+# ERROR: Cannot mix --config with --mode/--rules
+vetol check --config rules.json -m blacklist "echo test"
+```
+
+### Mode Options
+
+- **whitelist**: Only allow explicitly permitted commands/sequences. Commands/sequences not in the whitelist are rejected.
+- **blacklist**: Allow all commands/sequences except those explicitly forbidden. Commands/sequences in the blacklist are rejected.
+
+## Architecture
+
+### Directory Structure
+
+```
+vetol/
+├── cmd/
+│   └── main.go              # CLI entry point
+├── internal/
+│   ├── parser/              # Bash AST parsing logic
+│   └── validator/           # Security validation logic
+├── pkg/
+│   └── rules/               # Rule management and configuration
+├── go.mod
+└── go.sum
+```
+
+## Development Roadmap
+
+- [ ] Setup go.mod with mvdan.cc/sh/v3/syntax dependency
+- [ ] Implement AST parser wrapper
+- [ ] Implement whitelist/blacklist validator
+- [ ] Create CLI command structure
+- [ ] Add configuration file support
+- [ ] Write comprehensive tests
+- [ ] Add documentation and examples
