@@ -138,6 +138,42 @@ func TestValidate(t *testing.T) {
 			expectedViolatedCount: 2,
 			wantErr:               false,
 		},
+		{
+			name:                  "whitelist with prefix matching - command with quoted args",
+			mode:                  rules.ModeWhitelist,
+			allowedRules:          []string{"echo"},
+			commandStr:            "echo 'Hello World'",
+			expectedValid:         true,
+			expectedViolatedCount: 0,
+			wantErr:               false,
+		},
+		{
+			name:                  "whitelist with prefix matching - command with multiple args",
+			mode:                  rules.ModeWhitelist,
+			allowedRules:          []string{"ls -la"},
+			commandStr:            "ls -la /tmp",
+			expectedValid:         true,
+			expectedViolatedCount: 0,
+			wantErr:               false,
+		},
+		{
+			name:                  "blacklist with prefix matching - forbidden command with args",
+			mode:                  rules.ModeBlacklist,
+			allowedRules:          []string{"rm"},
+			commandStr:            "rm -rf /",
+			expectedValid:         false,
+			expectedViolatedCount: 1,
+			wantErr:               false,
+		},
+		{
+			name:                  "blacklist with prefix matching - different command not blocked",
+			mode:                  rules.ModeBlacklist,
+			allowedRules:          []string{"rm"},
+			commandStr:            "rmdir /tmp",
+			expectedValid:         true,
+			expectedViolatedCount: 0,
+			wantErr:               false,
+		},
 	}
 
 	for _, tt := range tests {
