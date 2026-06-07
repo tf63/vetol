@@ -12,41 +12,28 @@ import (
 )
 
 func main() {
-	if len(os.Args) < 2 {
-		printUsage()
-		os.Exit(1)
-	}
-
 	// Check for help flag
-	if os.Args[1] == "--help" || os.Args[1] == "-h" || os.Args[1] == "help" {
+	if len(os.Args) > 1 && (os.Args[1] == "--help" || os.Args[1] == "-h" || os.Args[1] == "help") {
 		printUsage()
 		os.Exit(0)
 	}
 
-	subcommand := os.Args[1]
-
-	if subcommand != "check" {
-		logger.Error("unknown subcommand", "subcommand", subcommand)
-		printUsage()
-		os.Exit(1)
-	}
-
-	// Check for help flag in check subcommand
-	for _, arg := range os.Args[2:] {
+	// Check for help flag in arguments
+	for _, arg := range os.Args[1:] {
 		if arg == "--help" || arg == "-h" {
-			printCheckUsage()
+			printUsage()
 			os.Exit(0)
 		}
 	}
 
-	fs := flag.NewFlagSet("check", flag.ContinueOnError)
+	fs := flag.NewFlagSet("vetol", flag.ContinueOnError)
 	mode := fs.String("mode", "", "Security validation mode (whitelist or blacklist)")
 	modeShort := fs.String("m", "", "Short flag for mode")
 	rulesStr := fs.String("rules", "", "Comma-separated list of rules")
 	rulesShort := fs.String("r", "", "Short flag for rules")
 	configPath := fs.String("config", "", "Path to configuration file")
 
-	if err := fs.Parse(os.Args[2:]); err != nil {
+	if err := fs.Parse(os.Args[1:]); err != nil {
 		logger.Error("failed to parse flags", "error", err)
 		os.Exit(1)
 	}
@@ -121,9 +108,6 @@ func main() {
 		os.Exit(0)
 	} else {
 		fmt.Println("DENY")
-		if len(result.ViolatedCommands) > 0 {
-			logger.Error("violated commands", "commands", result.ViolatedCommands)
-		}
 		os.Exit(1)
 	}
 }
@@ -131,24 +115,7 @@ func main() {
 func printUsage() {
 	fmt.Fprintf(os.Stderr, `Vetol - Security command validator
 
-Usage: vetol [COMMAND] [OPTIONS]
-
-Commands:
-  check                    Analyze and validate a bash command string
-  help, -h, --help        Show this help message
-
-Examples:
-  vetol check -m whitelist -r "ls,cat,grep" "ls -la /tmp"
-  vetol check -m blacklist -r "rm,dd" "cat /etc/passwd"
-  vetol check --config rules.json "docker compose exec app rm -rf /"
-  vetol --help             Show this help message
-
-Use 'vetol check --help' for more information about the check command.
-`)
-}
-
-func printCheckUsage() {
-	fmt.Fprintf(os.Stderr, `Usage: vetol check [OPTIONS] <COMMAND_STRING>
+Usage: vetol [OPTIONS] <COMMAND_STRING>
 
 Options:
   --mode, -m <mode>        Security validation mode (whitelist or blacklist)
@@ -161,10 +128,10 @@ Arguments:
 
 Configuration Methods (use one):
   1. With --mode and --rules flags:
-     vetol check -m whitelist -r "ls,cat,grep" "ls -la /tmp"
+     vetol -m whitelist -r "ls,cat,grep" "ls -la /tmp"
 
   2. With --config file:
-     vetol check --config rules.json "docker compose exec app rm -rf /"
+     vetol --config rules.json "docker compose exec app rm -rf /"
 
 Mode Options:
   whitelist               Only allow explicitly permitted commands
@@ -176,8 +143,9 @@ Rule Format:
   Comma-separated:        ls,cat,grep or "docker compose exec app,cat"
 
 Examples:
-  vetol check -m whitelist -r "ls,cat,grep" "ls -la /tmp"
-  vetol check -m blacklist -r "rm,dd" "cat /etc/passwd"
-  vetol check --config rules.json "docker compose exec app rm -rf /"
+  vetol -m whitelist -r "ls,cat,grep" "ls -la /tmp"
+  vetol -m blacklist -r "rm,dd" "cat /etc/passwd"
+  vetol --config rules.json "docker compose exec app rm -rf /"
+  vetol --help             Show this help message
 `)
 }
