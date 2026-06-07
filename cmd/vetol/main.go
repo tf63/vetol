@@ -117,10 +117,10 @@ func main() {
 
 	// Output result
 	if result.Valid {
-		fmt.Println("VALID")
+		fmt.Println("ALLOW")
 		os.Exit(0)
 	} else {
-		fmt.Println("INVALID")
+		fmt.Println("DENY")
 		if len(result.ViolatedCommands) > 0 {
 			logger.Error("violated commands", "commands", result.ViolatedCommands)
 		}
