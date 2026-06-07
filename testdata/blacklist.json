@@ -1,0 +1,4 @@
+{
+  "mode": "blacklist",
+  "rules": ["pwd", "echo hello", "grep -r", "ls -la"]
+}
