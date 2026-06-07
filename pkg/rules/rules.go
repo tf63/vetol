@@ -22,12 +22,16 @@ func NewRule(ruleStr string) Rule {
 	return Rule{Commands: commands}
 }
 
-// Matches checks if the provided command sequence matches this rule.
+// Matches checks if the provided command sequence matches this rule using prefix matching.
+// The rule matches if the command sequence starts with all elements of the rule.
+// For example, rule "echo" matches ["echo"], ["echo", "arg1"], ["echo", "arg1", "arg2"], etc.
 func (r *Rule) Matches(commands []string) bool {
-	if len(r.Commands) != len(commands) {
+	// Prefix matching: rule length must be <= command length
+	if len(r.Commands) > len(commands) {
 		return false
 	}
 
+	// Check if all rule commands match the beginning of the command sequence
 	for i, cmd := range r.Commands {
 		if commands[i] != cmd {
 			return false
