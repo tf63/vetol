@@ -62,7 +62,7 @@ Parse and validate a bash command string against an allowed command list.
 vetol check --mode whitelist --rules ls,cat,grep "ls -la /tmp"
 
 # Multi-command sequences
-vetol check -m whitelist -r "docker compose exec go fmt,ls,cat" "docker compose exec go fmt ./..."
+vetol check -m whitelist -r "docker compose exec app go fmt,ls,cat" "docker compose exec app go fmt ./..."
 ```
 
 ### Check Command with Blacklist Mode
@@ -74,7 +74,7 @@ Parse and validate a bash command string against a forbidden command list.
 vetol check --mode blacklist --rules rm,dd,mkfs "cat /etc/passwd"
 
 # Multi-command sequences
-vetol check -m blacklist -r "docker compose exec rm,rm -rf" "docker compose exec rm -rf /"
+vetol check -m blacklist -r "docker compose exec app rm,rm -rf" "docker compose exec app rm -rf /"
 ```
 
 ### Rule Format
@@ -82,15 +82,15 @@ vetol check -m blacklist -r "docker compose exec rm,rm -rf" "docker compose exec
 Rules are comma-separated, where each rule can be:
 
 - **Single command**: `ls`, `cat`, `rm`, `dd`
-- **Multi-command sequence**: `docker compose exec rm`, `docker compose exec go fmt`
+- **Multi-command sequence**: `docker compose exec app rm`, `docker compose exec app go fmt`
 
 Multi-command rules match only when the exact sequence of commands appears in the AST.
 
 **Examples:**
 
-- Rule `docker compose exec rm` matches: `docker compose exec rm -rf /` ✓
-- Rule `docker compose exec rm` does NOT match: `docker rm -rf /` ✗
-- Rule `docker compose exec rm` does NOT match: `docker compose exec go fmt` ✗
+- Rule `docker compose exec app rm` matches: `docker compose exec app rm -rf /` ✓
+- Rule `docker compose exec app rm` does NOT match: `docker rm -rf /` ✗
+- Rule `docker compose exec app rm` does NOT match: `docker compose exec app go fmt` ✗
 
 ### Options
 
@@ -120,8 +120,8 @@ If `--config` is specified, `--mode` and `--rules` must NOT be provided. Specify
 {
   "mode": "blacklist",
   "rules": [
-    "docker compose exec rm",
-    "docker compose exec mkfs",
+    "docker compose exec app rm",
+    "docker compose exec app mkfs",
     "docker run rm -rf",
     "rm -rf",
     "dd"
@@ -140,7 +140,7 @@ vetol check -m blacklist -r "rm,dd" "cat /etc/passwd"
 **Using configuration file:**
 
 ```bash
-vetol check --config rules.json "docker compose exec rm -rf /"
+vetol check --config rules.json "docker compose exec app rm -rf /"
 ```
 
 **Error cases:**
