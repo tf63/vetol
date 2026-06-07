@@ -17,12 +17,26 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Check for help flag
+	if os.Args[1] == "--help" || os.Args[1] == "-h" || os.Args[1] == "help" {
+		printUsage()
+		os.Exit(0)
+	}
+
 	subcommand := os.Args[1]
 
 	if subcommand != "check" {
 		logger.Error("unknown subcommand", "subcommand", subcommand)
 		printUsage()
 		os.Exit(1)
+	}
+
+	// Check for help flag in check subcommand
+	for _, arg := range os.Args[2:] {
+		if arg == "--help" || arg == "-h" {
+			printCheckUsage()
+			os.Exit(0)
+		}
 	}
 
 	fs := flag.NewFlagSet("check", flag.ContinueOnError)
@@ -115,16 +129,55 @@ func main() {
 }
 
 func printUsage() {
+	fmt.Fprintf(os.Stderr, `Vetol - Security command validator
+
+Usage: vetol [COMMAND] [OPTIONS]
+
+Commands:
+  check                    Analyze and validate a bash command string
+  help, -h, --help        Show this help message
+
+Examples:
+  vetol check -m whitelist -r "ls,cat,grep" "ls -la /tmp"
+  vetol check -m blacklist -r "rm,dd" "cat /etc/passwd"
+  vetol check --config rules.json "docker compose exec app rm -rf /"
+  vetol --help             Show this help message
+
+Use 'vetol check --help' for more information about the check command.
+`)
+}
+
+func printCheckUsage() {
 	fmt.Fprintf(os.Stderr, `Usage: vetol check [OPTIONS] <COMMAND_STRING>
 
 Options:
   --mode, -m <mode>        Security validation mode (whitelist or blacklist)
   --rules, -r <RULES>      Comma-separated list of rules
   --config <PATH>          Path to configuration file (JSON)
+  --help, -h              Show this help message
+
+Arguments:
+  <COMMAND_STRING>         The bash command string to validate
+
+Configuration Methods (use one):
+  1. With --mode and --rules flags:
+     vetol check -m whitelist -r "ls,cat,grep" "ls -la /tmp"
+
+  2. With --config file:
+     vetol check --config rules.json "docker compose exec app rm -rf /"
+
+Mode Options:
+  whitelist               Only allow explicitly permitted commands
+  blacklist               Allow all commands except explicitly forbidden ones
+
+Rule Format:
+  Single command:         ls, cat, rm
+  Command sequence:       docker compose exec app rm, docker run rm -rf
+  Comma-separated:        ls,cat,grep or "docker compose exec app,cat"
 
 Examples:
   vetol check -m whitelist -r "ls,cat,grep" "ls -la /tmp"
   vetol check -m blacklist -r "rm,dd" "cat /etc/passwd"
-  vetol check --config rules.json "docker compose exec rm -rf /"
+  vetol check --config rules.json "docker compose exec app rm -rf /"
 `)
 }
