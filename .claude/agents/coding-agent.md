@@ -38,8 +38,8 @@ color: cyan
 ### 1. Prepare
 
 - セッションの初めでは、Serena MCPを次の手順でアクティベートしてください
-  - **注意: SerenaはSkillではないので注意してください**
-  1. ToolSearch で `mcp__serena__activate_project` のスキーマを取得する
+  - **注意: SerenaはSkillではなく、MCPのツール呼び出しなので注意してください**
+  1. `ToolSearch(query: "select:mcp__serena__activate_project")` でスキーマをロードする
   2. スキーマがロードされてから `mcp__serena__activate_project({ project_name: "vetol" })` を呼び出す
   3. Serena MCPのinitial_instructionは設定していないので無視して良いです
 
@@ -52,6 +52,7 @@ color: cyan
 
 - 実装を更新した場合、`golangci-lint run --fix` と `go test ./...` を実行し、すべてのエラーが解消されていることを確認してください
 - テストコードを更新した場合、必ずテストが成功することを確認してください
+- `bash tests/test.sh` を実行して、テストスクリプトがすべて成功することを確認してください
 
 ## Tools
 
@@ -106,3 +107,8 @@ color: cyan
   "search_for_pattern",
 ]
 ```
+
+## Commands
+
+- `go run cmd/main.go`: アプリケーションを実行します
+- `go doc <package>`: Goモジュールの用法を確認します

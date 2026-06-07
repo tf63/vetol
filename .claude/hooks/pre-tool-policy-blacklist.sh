@@ -31,9 +31,6 @@ BLACKLIST=(
   '^git push --force( .*)?$'
   '^git push -f( .*)?$'
 
-  # Terraform
-  '^terraform destroy( .*)?$'
-
   # Kubernetes
   '^kubectl delete( .*)?$'
   '^kubectl drain( .*)?$'

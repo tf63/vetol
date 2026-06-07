@@ -7,6 +7,7 @@ paths: ["*_test.go"]
 ## Coding Style
 
 - 対象ファイルのテストはカバレッジが100%になるように書いてください
+- private methodのテストは、public methodを介してテストしなさい
 
 ## Table Driven Tests
 
