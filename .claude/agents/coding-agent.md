@@ -21,7 +21,7 @@ hooks:
     - matcher: "Bash"
       hooks:
         - type: command
-          command: ".claude/hooks/pre-tool-policy-blacklist.sh"
+          command: ".claude/hooks/pre-tool-policy-denylist.sh"
 background: false
 effort: medium
 color: cyan
@@ -110,5 +110,5 @@ color: cyan
 
 ## Commands
 
-- `go run cmd/main.go`: アプリケーションを実行します
+- `go run cmd/vetol/main.go`: アプリケーションを実行します
 - `go doc <package>`: Goモジュールの用法を確認します

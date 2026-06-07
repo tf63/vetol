@@ -20,7 +20,7 @@
       "Bash(golangci-lint:*)",
       "Bash(go doc:*)",
       "Bash(go test:*)",
-      "Bash(go run cmd/main.go)",
+      "Bash(go run cmd/vetol/main.go)",
       "Bash(bash tests/test.sh)",
       "Bash(git status:*)",
       "Bash(git diff:*)",

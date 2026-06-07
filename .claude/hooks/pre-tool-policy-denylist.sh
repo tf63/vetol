@@ -3,7 +3,7 @@
 INPUT=$(cat)
 COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
 
-BLACKLIST=(
+DENYLIST=(
   # File deletion
   '^rm( .*)?$'
   '^unlink( .*)?$'
@@ -49,7 +49,7 @@ BLACKLIST=(
 
 ALLOWED=true
 
-for pattern in "${BLACKLIST[@]}"; do
+for pattern in "${DENYLIST[@]}"; do
   echo "TEST: $pattern" >&2
   if echo "$COMMAND" | grep -Eq "$pattern"; then
     ALLOWED=false
@@ -62,7 +62,7 @@ if [ "$ALLOWED" = false ]; then
     hookSpecificOutput: {
       hookEventName: "PreToolUse",
       permissionDecision: "deny",
-      permissionDecisionReason: "Command not allowed by blacklist policy"
+      permissionDecisionReason: "Command not allowed by denylist policy"
     }
   }'
   exit 2

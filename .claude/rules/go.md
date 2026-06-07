@@ -123,20 +123,3 @@ if err := g.Wait(); err != nil {
     return err
 }
 ```
-
-## Logging
-
-- ログ出力には標準ライブラリの `log/slog` を使用してください
-- `fmt.Printf` や `log.Printf` を使用しないでください
-- 構造化ログ（Structured Logging）で出力してください
-- メッセージに値を埋め込まず、属性として出力してください
-
-```go
-import "log/slog"
-
-logger.Info(
-  "user created",
-  "user_id", userID,
-  "email", email,
-)
-```
