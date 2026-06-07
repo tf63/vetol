@@ -27,7 +27,7 @@ Simple string matching-based validation is insufficient and can be bypassed:
   - Pipelines (`|`)
   - Command substitution (`$()`, backticks)
   - Other shell constructs
-- Perform strict validation against whitelist or blacklist rules at the AST level
+- Perform strict validation against allowlist or denylist rules at the AST level
 - Reject any command string containing forbidden commands, regardless of nesting depth or context
 
 ## Tools
@@ -53,28 +53,28 @@ vetol [OPTIONS] <COMMAND_STRING>
 
 ## Usage
 
-### Check Command with Whitelist Mode
+### Check Command with Allowlist Mode
 
 Parse and validate a bash command string against an allowed command list.
 
 ```bash
 # Single commands
-vetol check --mode whitelist --rules ls,cat,grep "ls -la /tmp"
+vetol check --mode allowlist --rules ls,cat,grep "ls -la /tmp"
 
 # Multi-command sequences
-vetol check -m whitelist -r "docker compose exec app go fmt,ls,cat" "docker compose exec app go fmt ./..."
+vetol check -m allowlist -r "docker compose exec app go fmt,ls,cat" "docker compose exec app go fmt ./..."
 ```
 
-### Check Command with Blacklist Mode
+### Check Command with Denylist Mode
 
 Parse and validate a bash command string against a forbidden command list.
 
 ```bash
 # Single commands
-vetol check --mode blacklist --rules rm,dd,mkfs "cat /etc/passwd"
+vetol check --mode denylist --rules rm,dd,mkfs "cat /etc/passwd"
 
 # Multi-command sequences
-vetol check -m blacklist -r "docker compose exec app rm,rm -rf" "docker compose exec app rm -rf /"
+vetol check -m denylist -r "docker compose exec app rm,rm -rf" "docker compose exec app rm -rf /"
 ```
 
 ### Rule Format
@@ -84,23 +84,26 @@ Rules are comma-separated, where each rule can be:
 - **Single command**: `ls`, `cat`, `rm`, `dd`
 - **Multi-command sequence**: `docker compose exec app rm`, `docker compose exec app go fmt`
 
-Multi-command rules match only when the exact sequence of commands appears in the AST.
+Rules use **prefix matching**: a rule matches a command sequence if the command sequence starts with all elements of the rule.
 
-**Examples:**
+**Prefix Matching Examples:**
 
+- Rule `echo` matches: `echo`, `echo Hello`, `echo 'Hello World'` ✓
+- Rule `ls -la` matches: `ls -la`, `ls -la /tmp` ✓
 - Rule `docker compose exec app rm` matches: `docker compose exec app rm -rf /` ✓
 - Rule `docker compose exec app rm` does NOT match: `docker rm -rf /` ✗
 - Rule `docker compose exec app rm` does NOT match: `docker compose exec app go fmt` ✗
+- Rule `rm` does NOT match: `rmdir` ✗
 
 ### Options
 
 - `--mode <mode>`, `-m <mode>`: Security validation mode (required)
-  - `whitelist`: Only allow explicitly permitted commands
-  - `blacklist`: Allow all commands except explicitly forbidden ones
+  - `allowlist`: Only allow explicitly permitted commands
+  - `denylist`: Allow all commands except explicitly forbidden ones
 - `--rules <RULES>`, `-r <RULES>`: Comma-separated list of rules for validation (required)
   - Each rule can be a single command or a space-separated sequence of commands
-  - In whitelist mode: list of allowed command/sequences
-  - In blacklist mode: list of forbidden command/sequences
+  - In allowlist mode: list of allowed command/sequences
+  - In denylist mode: list of forbidden command/sequences
 - `<COMMAND_STRING>`: The bash command string to validate (positional argument)
 
 ## Config
@@ -118,7 +121,7 @@ If `--config` is specified, `--mode` and `--rules` must NOT be provided. Specify
 
 ```json
 {
-  "mode": "blacklist",
+  "mode": "denylist",
   "rules": [
     "docker compose exec app rm",
     "docker compose exec app mkfs",
@@ -134,7 +137,7 @@ If `--config` is specified, `--mode` and `--rules` must NOT be provided. Specify
 **Using command-line options:**
 
 ```bash
-vetol check -m blacklist -r "rm,dd" "cat /etc/passwd"
+vetol check -m denylist -r "rm,dd" "cat /etc/passwd"
 ```
 
 **Using configuration file:**
@@ -147,13 +150,13 @@ vetol check --config rules.json "docker compose exec app rm -rf /"
 
 ```bash
 # ERROR: Cannot mix --config with --mode/--rules
-vetol check --config rules.json -m blacklist "echo test"
+vetol check --config rules.json -m denylist "echo test"
 ```
 
 ### Mode Options
 
-- **whitelist**: Only allow explicitly permitted commands/sequences. Commands/sequences not in the whitelist are rejected.
-- **blacklist**: Allow all commands/sequences except those explicitly forbidden. Commands/sequences in the blacklist are rejected.
+- **allowlist**: Only allow explicitly permitted commands/sequences. Commands/sequences not in the allowlist are rejected.
+- **denylist**: Allow all commands/sequences except those explicitly forbidden. Commands/sequences in the denylist are rejected.
 
 ## Architecture
 
@@ -176,7 +179,7 @@ vetol/
 
 - [ ] Setup go.mod with mvdan.cc/sh/v3/syntax dependency
 - [ ] Implement AST parser wrapper
-- [ ] Implement whitelist/blacklist validator
+- [ ] Implement allowlist/denylist validator
 - [ ] Create CLI command structure
 - [ ] Add configuration file support
 - [ ] Write comprehensive tests
