@@ -27,7 +27,7 @@ func main() {
 	}
 
 	fs := flag.NewFlagSet("vetol", flag.ContinueOnError)
-	mode := fs.String("mode", "", "Security validation mode (whitelist or blacklist)")
+	mode := fs.String("mode", "", "Security validation mode (allowlist or denylist)")
 	modeShort := fs.String("m", "", "Short flag for mode")
 	rulesStr := fs.String("rules", "", "Comma-separated list of rules")
 	rulesShort := fs.String("r", "", "Short flag for rules")
@@ -72,7 +72,7 @@ func main() {
 	// Validate mode
 	if *configPath == "" {
 		modeValue := rules.Mode(*mode)
-		if modeValue != rules.ModeWhitelist && modeValue != rules.ModeBlacklist {
+		if modeValue != rules.ModeAllowlist && modeValue != rules.ModeDenylist {
 			logger.Error("invalid mode", "mode", *mode)
 			os.Exit(1)
 		}
@@ -118,7 +118,7 @@ func printUsage() {
 Usage: vetol [OPTIONS] <COMMAND_STRING>
 
 Options:
-  --mode, -m <mode>        Security validation mode (whitelist or blacklist)
+  --mode, -m <mode>        Security validation mode (allowlist or denylist)
   --rules, -r <RULES>      Comma-separated list of rules
   --config <PATH>          Path to configuration file (JSON)
   --help, -h              Show this help message
@@ -128,14 +128,14 @@ Arguments:
 
 Configuration Methods (use one):
   1. With --mode and --rules flags:
-     vetol -m whitelist -r "ls,cat,grep" "ls -la /tmp"
+     vetol -m allowlist -r "ls,cat,grep" "ls -la /tmp"
 
   2. With --config file:
      vetol --config rules.json "docker compose exec app rm -rf /"
 
 Mode Options:
-  whitelist               Only allow explicitly permitted commands
-  blacklist               Allow all commands except explicitly forbidden ones
+  allowlist               Only allow explicitly permitted commands
+  denylist               Allow all commands except explicitly forbidden ones
 
 Rule Format:
   Single command:         ls, cat, rm
@@ -143,8 +143,8 @@ Rule Format:
   Comma-separated:        ls,cat,grep or "docker compose exec app,cat"
 
 Examples:
-  vetol -m whitelist -r "ls,cat,grep" "ls -la /tmp"
-  vetol -m blacklist -r "rm,dd" "cat /etc/passwd"
+  vetol -m allowlist -r "ls,cat,grep" "ls -la /tmp"
+  vetol -m denylist -r "rm,dd" "cat /etc/passwd"
   vetol --config rules.json "docker compose exec app rm -rf /"
   vetol --help             Show this help message
 `)

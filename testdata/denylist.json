@@ -1,4 +1,4 @@
 {
-  "mode": "whitelist",
+  "mode": "denylist",
   "rules": ["pwd", "echo hello", "grep -r", "ls -la"]
 }

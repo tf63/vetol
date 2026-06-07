@@ -25,7 +25,7 @@ func LoadConfigFromFile(filePath string) (Config, error) {
 	}
 
 	mode := Mode(configFile.Mode)
-	if mode != ModeWhitelist && mode != ModeBlacklist {
+	if mode != ModeAllowlist && mode != ModeDenylist {
 		return Config{}, fmt.Errorf("invalid mode: %s", configFile.Mode)
 	}
 

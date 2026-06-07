@@ -7,7 +7,7 @@ import (
 )
 
 func TestNewValidator(t *testing.T) {
-	config := rules.NewConfig(rules.ModeWhitelist, []string{"ls"})
+	config := rules.NewConfig(rules.ModeAllowlist, []string{"ls"})
 	v := NewValidator(&config)
 
 	// Verify that NewValidator creates a valid Validator
@@ -31,8 +31,8 @@ func TestValidate(t *testing.T) {
 		wantErr               bool
 	}{
 		{
-			name:                  "whitelist mode - allowed single command",
-			mode:                  rules.ModeWhitelist,
+			name:                  "allowlist mode - allowed single command",
+			mode:                  rules.ModeAllowlist,
 			allowedRules:          []string{"ls"},
 			commandStr:            "ls",
 			expectedValid:         true,
@@ -40,8 +40,8 @@ func TestValidate(t *testing.T) {
 			wantErr:               false,
 		},
 		{
-			name:                  "whitelist mode - allowed command with args",
-			mode:                  rules.ModeWhitelist,
+			name:                  "allowlist mode - allowed command with args",
+			mode:                  rules.ModeAllowlist,
 			allowedRules:          []string{"ls -la /tmp"},
 			commandStr:            "ls -la /tmp",
 			expectedValid:         true,
@@ -49,8 +49,8 @@ func TestValidate(t *testing.T) {
 			wantErr:               false,
 		},
 		{
-			name:                  "whitelist mode - forbidden command",
-			mode:                  rules.ModeWhitelist,
+			name:                  "allowlist mode - forbidden command",
+			mode:                  rules.ModeAllowlist,
 			allowedRules:          []string{"ls"},
 			commandStr:            "rm file.txt",
 			expectedValid:         false,
@@ -58,8 +58,8 @@ func TestValidate(t *testing.T) {
 			wantErr:               false,
 		},
 		{
-			name:                  "whitelist mode - multiple commands piped",
-			mode:                  rules.ModeWhitelist,
+			name:                  "allowlist mode - multiple commands piped",
+			mode:                  rules.ModeAllowlist,
 			allowedRules:          []string{"ls", "grep test"},
 			commandStr:            "ls | grep test",
 			expectedValid:         true,
@@ -67,8 +67,8 @@ func TestValidate(t *testing.T) {
 			wantErr:               false,
 		},
 		{
-			name:                  "whitelist mode - one of multiple piped commands not allowed",
-			mode:                  rules.ModeWhitelist,
+			name:                  "allowlist mode - one of multiple piped commands not allowed",
+			mode:                  rules.ModeAllowlist,
 			allowedRules:          []string{"ls"},
 			commandStr:            "ls | grep test",
 			expectedValid:         false,
@@ -76,8 +76,8 @@ func TestValidate(t *testing.T) {
 			wantErr:               false,
 		},
 		{
-			name:                  "blacklist mode - forbidden command",
-			mode:                  rules.ModeBlacklist,
+			name:                  "denylist mode - forbidden command",
+			mode:                  rules.ModeDenylist,
 			allowedRules:          []string{"rm file.txt"},
 			commandStr:            "rm file.txt",
 			expectedValid:         false,
@@ -85,8 +85,8 @@ func TestValidate(t *testing.T) {
 			wantErr:               false,
 		},
 		{
-			name:                  "blacklist mode - allowed command",
-			mode:                  rules.ModeBlacklist,
+			name:                  "denylist mode - allowed command",
+			mode:                  rules.ModeDenylist,
 			allowedRules:          []string{"rm"},
 			commandStr:            "ls",
 			expectedValid:         true,
@@ -94,8 +94,8 @@ func TestValidate(t *testing.T) {
 			wantErr:               false,
 		},
 		{
-			name:                  "blacklist mode - multiple forbidden commands",
-			mode:                  rules.ModeBlacklist,
+			name:                  "denylist mode - multiple forbidden commands",
+			mode:                  rules.ModeDenylist,
 			allowedRules:          []string{"rm file.txt"},
 			commandStr:            "ls && rm file.txt",
 			expectedValid:         false,
@@ -104,7 +104,7 @@ func TestValidate(t *testing.T) {
 		},
 		{
 			name:                  "empty command string",
-			mode:                  rules.ModeWhitelist,
+			mode:                  rules.ModeAllowlist,
 			allowedRules:          []string{"ls"},
 			commandStr:            "",
 			expectedValid:         true,
@@ -113,7 +113,7 @@ func TestValidate(t *testing.T) {
 		},
 		{
 			name:                  "invalid syntax - parsing error",
-			mode:                  rules.ModeWhitelist,
+			mode:                  rules.ModeAllowlist,
 			allowedRules:          []string{"ls"},
 			commandStr:            "ls (",
 			expectedValid:         false,
@@ -122,7 +122,7 @@ func TestValidate(t *testing.T) {
 		},
 		{
 			name:                  "command substitution with allowed commands",
-			mode:                  rules.ModeWhitelist,
+			mode:                  rules.ModeAllowlist,
 			allowedRules:          []string{"echo", "ls"},
 			commandStr:            "echo $(ls)",
 			expectedValid:         true,
@@ -131,7 +131,7 @@ func TestValidate(t *testing.T) {
 		},
 		{
 			name:                  "command substitution with forbidden command",
-			mode:                  rules.ModeWhitelist,
+			mode:                  rules.ModeAllowlist,
 			allowedRules:          []string{"echo"},
 			commandStr:            "echo $(rm file.txt)",
 			expectedValid:         false,
@@ -139,8 +139,8 @@ func TestValidate(t *testing.T) {
 			wantErr:               false,
 		},
 		{
-			name:                  "whitelist with prefix matching - command with quoted args",
-			mode:                  rules.ModeWhitelist,
+			name:                  "allowlist with prefix matching - command with quoted args",
+			mode:                  rules.ModeAllowlist,
 			allowedRules:          []string{"echo"},
 			commandStr:            "echo 'Hello World'",
 			expectedValid:         true,
@@ -148,8 +148,8 @@ func TestValidate(t *testing.T) {
 			wantErr:               false,
 		},
 		{
-			name:                  "whitelist with prefix matching - command with multiple args",
-			mode:                  rules.ModeWhitelist,
+			name:                  "allowlist with prefix matching - command with multiple args",
+			mode:                  rules.ModeAllowlist,
 			allowedRules:          []string{"ls -la"},
 			commandStr:            "ls -la /tmp",
 			expectedValid:         true,
@@ -157,8 +157,8 @@ func TestValidate(t *testing.T) {
 			wantErr:               false,
 		},
 		{
-			name:                  "blacklist with prefix matching - forbidden command with args",
-			mode:                  rules.ModeBlacklist,
+			name:                  "denylist with prefix matching - forbidden command with args",
+			mode:                  rules.ModeDenylist,
 			allowedRules:          []string{"rm"},
 			commandStr:            "rm -rf /",
 			expectedValid:         false,
@@ -166,8 +166,8 @@ func TestValidate(t *testing.T) {
 			wantErr:               false,
 		},
 		{
-			name:                  "blacklist with prefix matching - different command not blocked",
-			mode:                  rules.ModeBlacklist,
+			name:                  "denylist with prefix matching - different command not blocked",
+			mode:                  rules.ModeDenylist,
 			allowedRules:          []string{"rm"},
 			commandStr:            "rmdir /tmp",
 			expectedValid:         true,
@@ -217,14 +217,14 @@ func TestValidateResultFields(t *testing.T) {
 	}{
 		{
 			name:               "result fields for valid command",
-			mode:               rules.ModeWhitelist,
+			mode:               rules.ModeAllowlist,
 			allowedRules:       []string{"ls"},
 			commandStr:         "ls",
 			shouldHaveViolated: false,
 		},
 		{
 			name:               "result fields for invalid command",
-			mode:               rules.ModeWhitelist,
+			mode:               rules.ModeAllowlist,
 			allowedRules:       []string{"ls"},
 			commandStr:         "rm file.txt",
 			shouldHaveViolated: true,
@@ -316,7 +316,7 @@ func TestValidateMultipleSequences(t *testing.T) {
 	}{
 		{
 			name:              "two commands with && both allowed",
-			mode:              rules.ModeWhitelist,
+			mode:              rules.ModeAllowlist,
 			allowedRules:      []string{"ls", "cat file.txt"},
 			commandStr:        "ls && cat file.txt",
 			expectedViolated:  false,
@@ -324,7 +324,7 @@ func TestValidateMultipleSequences(t *testing.T) {
 		},
 		{
 			name:              "two commands with && first forbidden",
-			mode:              rules.ModeWhitelist,
+			mode:              rules.ModeAllowlist,
 			allowedRules:      []string{"cat"},
 			commandStr:        "ls && cat file.txt",
 			expectedViolated:  true,
@@ -332,7 +332,7 @@ func TestValidateMultipleSequences(t *testing.T) {
 		},
 		{
 			name:              "pipe with multiple commands",
-			mode:              rules.ModeWhitelist,
+			mode:              rules.ModeAllowlist,
 			allowedRules:      []string{"ls", "grep test", "awk {print}"},
 			commandStr:        "ls | grep test | awk '{print}'",
 			expectedViolated:  false,
@@ -371,21 +371,21 @@ func TestValidateEdgeCases(t *testing.T) {
 	}{
 		{
 			name:         "whitespace only",
-			mode:         rules.ModeWhitelist,
+			mode:         rules.ModeAllowlist,
 			allowedRules: []string{"ls"},
 			commandStr:   "   ",
 			expectedErr:  false,
 		},
 		{
 			name:         "command with tabs",
-			mode:         rules.ModeWhitelist,
+			mode:         rules.ModeAllowlist,
 			allowedRules: []string{"ls"},
 			commandStr:   "ls\t-la",
 			expectedErr:  false,
 		},
 		{
 			name:         "command with newlines",
-			mode:         rules.ModeWhitelist,
+			mode:         rules.ModeAllowlist,
 			allowedRules: []string{"ls"},
 			commandStr:   "ls\n-la",
 			expectedErr:  false,

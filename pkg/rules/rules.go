@@ -2,12 +2,12 @@ package rules
 
 import "strings"
 
-// Mode represents the validation mode: whitelist or blacklist.
+// Mode represents the validation mode: allowlist or denylist.
 type Mode string
 
 const (
-	ModeWhitelist Mode = "whitelist"
-	ModeBlacklist Mode = "blacklist"
+	ModeAllowlist Mode = "allowlist"
+	ModeDenylist  Mode = "denylist"
 )
 
 // Rule represents a single rule which can be a command or a sequence of commands.
@@ -61,17 +61,17 @@ func NewConfig(mode Mode, ruleStrings []string) Config {
 // IsValid checks if the provided command sequence is valid according to the rules.
 func (c *Config) IsValid(commands []string) bool {
 	switch c.Mode {
-	case ModeWhitelist:
-		return c.isWhitelisted(commands)
-	case ModeBlacklist:
-		return !c.isBlacklisted(commands)
+	case ModeAllowlist:
+		return c.isAllowlisted(commands)
+	case ModeDenylist:
+		return !c.isDenylisted(commands)
 	default:
 		return false
 	}
 }
 
-// isWhitelisted checks if the command sequence is in the whitelist.
-func (c *Config) isWhitelisted(commands []string) bool {
+// isAllowlisted checks if the command sequence is in the allowlist.
+func (c *Config) isAllowlisted(commands []string) bool {
 	for _, rule := range c.Rules {
 		if rule.Matches(commands) {
 			return true
@@ -80,8 +80,8 @@ func (c *Config) isWhitelisted(commands []string) bool {
 	return false
 }
 
-// isBlacklisted checks if the command sequence is in the blacklist.
-func (c *Config) isBlacklisted(commands []string) bool {
+// isDenylisted checks if the command sequence is in the denylist.
+func (c *Config) isDenylisted(commands []string) bool {
 	for _, rule := range c.Rules {
 		if rule.Matches(commands) {
 			return true

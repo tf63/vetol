@@ -48,7 +48,7 @@ func (v *Validator) Validate(commandStr string) (ValidationResult, error) {
 		isValid := v.config.IsValid(seq.Commands)
 
 		switch v.config.Mode {
-		case rules.ModeWhitelist:
+		case rules.ModeAllowlist:
 			if !isValid {
 				result.Valid = false
 				result.ViolatedCommands = append(
@@ -56,7 +56,7 @@ func (v *Validator) Validate(commandStr string) (ValidationResult, error) {
 					formatCommands(seq.Commands),
 				)
 			}
-		case rules.ModeBlacklist:
+		case rules.ModeDenylist:
 			if !isValid {
 				result.Valid = false
 				result.ViolatedCommands = append(
