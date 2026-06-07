@@ -17,7 +17,7 @@ run_test() {
   local args="$2"
   local expected="$3"
 
-  output=$(cd "$PROJECT_ROOT" && eval "go run ./cmd $args" 2>&1 || true)
+  output=$(cd "$PROJECT_ROOT" && eval "go run ./cmd/vetol $args" 2>&1 || true)
 
   if echo "$output" | grep -q "$expected"; then
     echo -e "${GREEN}✓${NC} $test_name"
