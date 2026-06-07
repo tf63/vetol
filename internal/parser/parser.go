@@ -33,10 +33,6 @@ func (p *Parser) ExtractCommandSequences(commandStr string) ([]CommandSequence, 
 		switch n := node.(type) {
 		case *syntax.CallExpr:
 			p.extractFromCallExpr(n, &sequences)
-		case *syntax.CmdSubst:
-			p.extractFromCmdSubst(n, &sequences)
-		case *syntax.ProcSubst:
-			p.extractFromProcSubst(n, &sequences)
 		}
 		return true
 	})
@@ -78,37 +74,5 @@ func (p *Parser) extractFromCallExpr(call *syntax.CallExpr, sequences *[]Command
 
 	if len(commands) > 0 {
 		*sequences = append(*sequences, CommandSequence{Commands: commands})
-	}
-}
-
-// extractFromCmdSubst extracts commands from a command substitution.
-func (p *Parser) extractFromCmdSubst(cmdSubst *syntax.CmdSubst, sequences *[]CommandSequence) {
-	if cmdSubst == nil {
-		return
-	}
-
-	// Recursively parse command substitutions
-	for _, stmt := range cmdSubst.Stmts {
-		if stmt != nil && stmt.Cmd != nil {
-			if callExpr, ok := stmt.Cmd.(*syntax.CallExpr); ok {
-				p.extractFromCallExpr(callExpr, sequences)
-			}
-		}
-	}
-}
-
-// extractFromProcSubst extracts commands from a process substitution.
-func (p *Parser) extractFromProcSubst(procSubst *syntax.ProcSubst, sequences *[]CommandSequence) {
-	if procSubst == nil {
-		return
-	}
-
-	// Recursively parse process substitutions
-	for _, stmt := range procSubst.Stmts {
-		if stmt != nil && stmt.Cmd != nil {
-			if callExpr, ok := stmt.Cmd.(*syntax.CallExpr); ok {
-				p.extractFromCallExpr(callExpr, sequences)
-			}
-		}
 	}
 }

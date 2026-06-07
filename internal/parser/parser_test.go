@@ -46,7 +46,7 @@ func TestExtractCommandSequences(t *testing.T) {
 		{
 			name:    "command substitution",
 			command: "echo $(ls -la)",
-			want:    [][]string{{"echo"}, {"ls", "-la"}, {"ls", "-la"}},
+			want:    [][]string{{"echo"}, {"ls", "-la"}},
 			wantErr: false,
 		},
 		{
@@ -82,7 +82,7 @@ func TestExtractCommandSequences(t *testing.T) {
 		{
 			name:    "process substitution",
 			command: "cat <(ls -la)",
-			want:    [][]string{{"cat"}, {"ls", "-la"}, {"ls", "-la"}},
+			want:    [][]string{{"cat"}, {"ls", "-la"}},
 			wantErr: false,
 		},
 	}

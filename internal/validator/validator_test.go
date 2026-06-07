@@ -135,7 +135,7 @@ func TestValidate(t *testing.T) {
 			allowedRules:          []string{"echo"},
 			commandStr:            "echo $(rm file.txt)",
 			expectedValid:         false,
-			expectedViolatedCount: 2,
+			expectedViolatedCount: 1,
 			wantErr:               false,
 		},
 		{
