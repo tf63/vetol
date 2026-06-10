@@ -211,45 +211,45 @@ run_test "allowlist with exclude: pwd (allowed)" \
 echo
 echo "=== Blacklist with Exclude Tests ==="
 
-run_test "blacklist with exclude: pwd (denied, rule matches)" \
+run_test "denylist with exclude: pwd (denied, rule matches)" \
   "DENY" \
-  --config testdata/blacklist_with_exclude.json "pwd"
+  --config testdata/denylist_with_exclude.json "pwd"
 
-run_test "blacklist with exclude: pwd -P (allowed, exclude prevents match)" \
+run_test "denylist with exclude: pwd -P (allowed, exclude prevents match)" \
   "ALLOW" \
-  --config testdata/blacklist_with_exclude.json "pwd -P"
+  --config testdata/denylist_with_exclude.json "pwd -P"
 
-run_test "blacklist with exclude: grep -r (denied, rule matches)" \
+run_test "denylist with exclude: grep -r (denied, rule matches)" \
   "DENY" \
-  --config testdata/blacklist_with_exclude.json "grep -r pattern"
+  --config testdata/denylist_with_exclude.json "grep -r pattern"
 
-run_test "blacklist with exclude: grep -r -q (allowed, exclude prevents match)" \
+run_test "denylist with exclude: grep -r -q (allowed, exclude prevents match)" \
   "ALLOW" \
-  --config testdata/blacklist_with_exclude.json "grep -r -q pattern"
+  --config testdata/denylist_with_exclude.json "grep -r -q pattern"
 
-run_test "blacklist with exclude: grep -rq (allowed, exclude prevents match)" \
+run_test "denylist with exclude: grep -rq (allowed, exclude prevents match)" \
   "ALLOW" \
-  --config testdata/blacklist_with_exclude.json "grep -rq pattern"
+  --config testdata/denylist_with_exclude.json "grep -rq pattern"
 
-run_test "blacklist with exclude: grep -qr (allowed, exclude prevents match)" \
+run_test "denylist with exclude: grep -qr (allowed, exclude prevents match)" \
   "ALLOW" \
-  --config testdata/blacklist_with_exclude.json "grep -qr pattern"
+  --config testdata/denylist_with_exclude.json "grep -qr pattern"
 
-run_test "blacklist with exclude: ls -la (denied, rule matches)" \
+run_test "denylist with exclude: ls -la (denied, rule matches)" \
   "DENY" \
-  --config testdata/blacklist_with_exclude.json "ls -la"
+  --config testdata/denylist_with_exclude.json "ls -la"
 
-run_test "blacklist with exclude: ls -la -i (allowed, exclude prevents match)" \
+run_test "denylist with exclude: ls -la -i (allowed, exclude prevents match)" \
   "ALLOW" \
-  --config testdata/blacklist_with_exclude.json "ls -la -i"
+  --config testdata/denylist_with_exclude.json "ls -la -i"
 
-run_test "blacklist with exclude: echo hello (denied, rule matches)" \
+run_test "denylist with exclude: echo hello (denied, rule matches)" \
   "DENY" \
-  --config testdata/blacklist_with_exclude.json "echo hello"
+  --config testdata/denylist_with_exclude.json "echo hello"
 
-run_test "blacklist with exclude: cat (allowed, no match)" \
+run_test "denylist with exclude: cat (allowed, no match)" \
   "ALLOW" \
-  --config testdata/blacklist_with_exclude.json "cat file.txt"
+  --config testdata/denylist_with_exclude.json "cat file.txt"
 
 # ============================================================
 # Long Flag with Value Tests
