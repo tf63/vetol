@@ -1,48 +1,39 @@
 package rules
 
-import (
-	"encoding/json"
-	"fmt"
-	"os"
-)
-
-// ConfigFile represents the structure of a JSON configuration file.
-type ConfigFile struct {
-	Mode  string     `json:"mode"`
-	Rules []RuleFile `json:"rules"`
+// Config represents the validation configuration.
+type Config struct {
+	Mode  Mode
+	Rules []Rule
 }
 
-// RuleFile represents a single rule in the JSON configuration file.
-type RuleFile struct {
-	Command string   `json:"command"`
-	Include []string `json:"include"`
-	Exclude []string `json:"exclude"`
+// IsValid checks if the provided command sequence is valid according to the rules.
+func (c *Config) IsValid(commands []string) bool {
+	switch c.Mode {
+	case ModeAllowlist:
+		return c.isAllowlisted(commands)
+	case ModeDenylist:
+		return !c.isDenylisted(commands)
+	default:
+		return false
+	}
 }
 
-// LoadConfigFromFile loads a configuration from a JSON file.
-func LoadConfigFromFile(filePath string) (Config, error) {
-	data, err := os.ReadFile(filePath)
-	if err != nil {
-		return Config{}, fmt.Errorf("failed to read config file: %w", err)
+// isAllowlisted checks if the command sequence is in the allowlist.
+func (c *Config) isAllowlisted(commands []string) bool {
+	for _, rule := range c.Rules {
+		if rule.Matches(commands) {
+			return true
+		}
 	}
+	return false
+}
 
-	var configFile ConfigFile
-	if err := json.Unmarshal(data, &configFile); err != nil {
-		return Config{}, fmt.Errorf("failed to parse config file: %w", err)
+// isDenylisted checks if the command sequence is in the denylist.
+func (c *Config) isDenylisted(commands []string) bool {
+	for _, rule := range c.Rules {
+		if rule.Matches(commands) {
+			return true
+		}
 	}
-
-	mode := Mode(configFile.Mode)
-	if mode != ModeAllowlist && mode != ModeDenylist {
-		return Config{}, fmt.Errorf("invalid mode: %s", configFile.Mode)
-	}
-
-	rules := make([]Rule, len(configFile.Rules))
-	for i, rf := range configFile.Rules {
-		rules[i] = Rule(rf)
-	}
-
-	return Config{
-		Mode:  mode,
-		Rules: rules,
-	}, nil
+	return false
 }

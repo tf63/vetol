@@ -7,7 +7,7 @@ import (
 
 	"github.com/tf63/vetol/internal/logger"
 	"github.com/tf63/vetol/internal/validator"
-	"github.com/tf63/vetol/pkg/rules"
+	"github.com/tf63/vetol/pkg/io"
 )
 
 func main() {
@@ -51,7 +51,7 @@ func main() {
 	commandStr := args[0]
 
 	// Load configuration
-	cfg, err := rules.LoadConfigFromFile(*configPath)
+	cfg, err := io.LoadConfigFromFile(*configPath)
 	if err != nil {
 		logger.Error("failed to load config", "error", err)
 		os.Exit(1)
