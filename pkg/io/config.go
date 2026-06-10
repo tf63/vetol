@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/tf63/vetol/pkg/rules"
+	"github.com/tf63/vetol/internal/rules"
 )
 
 // ConfigFile represents the structure of a JSON configuration file.

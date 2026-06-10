@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/tf63/vetol/internal/parser"
-	"github.com/tf63/vetol/pkg/rules"
+	"github.com/tf63/vetol/internal/rules"
 )
 
 // ValidationResult represents the result of a validation check.

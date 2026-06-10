@@ -3,7 +3,7 @@ package validator
 import (
 	"testing"
 
-	"github.com/tf63/vetol/pkg/rules"
+	"github.com/tf63/vetol/internal/rules"
 )
 
 func TestNewValidator(t *testing.T) {

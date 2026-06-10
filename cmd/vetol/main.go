@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/tf63/vetol/internal/logger"
 	"github.com/tf63/vetol/internal/validator"
 	"github.com/tf63/vetol/pkg/io"
+	"github.com/tf63/vetol/pkg/logger"
 )
 
 func main() {
