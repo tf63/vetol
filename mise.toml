@@ -4,6 +4,7 @@ uv = "0.11.18"
 "npm:commitlint" = "19.8.1"
 "npm:lefthook" = "1.11.14"
 "npm:prettier" = "3.5.3"
+"go:github.com/tf63/vetol/cmd/vetol" = "v0.1.0"
 
 [hooks]
 postinstall = "lefthook install"

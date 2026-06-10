@@ -21,11 +21,11 @@ hooks:
     - matcher: "Bash"
       hooks:
         - type: command
-          command: ".claude/hooks/pre-tool-policy-denylist.sh"
+          command: ".claude/hooks/pre-tool-policy-bash.sh"
     - matcher: "Agent"
       hooks:
         - type: command
-          command: ".claude/hooks/pre-tool-deny-isolation.sh"
+          command: ".claude/hooks/pre-tool-policy-agent.sh"
 background: false
 effort: medium
 color: cyan

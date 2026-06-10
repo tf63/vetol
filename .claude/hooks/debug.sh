@@ -2,6 +2,6 @@
 
 set -euo pipefail
 
-cat > ./claude-hook-agent.json
+cat > ./claude-hook.json
 
 exit 0
