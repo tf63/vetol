@@ -22,6 +22,10 @@ hooks:
       hooks:
         - type: command
           command: ".claude/hooks/pre-tool-policy-denylist.sh"
+    - matcher: "Agent"
+      hooks:
+        - type: command
+          command: ".claude/hooks/pre-tool-deny-isolation.sh"
 background: false
 effort: medium
 color: cyan
@@ -39,8 +43,8 @@ color: cyan
 
 - セッションの初めでは、Serena MCPを次の手順でアクティベートしてください
   - **注意: SerenaはSkillではなく、MCPのツール呼び出しなので注意してください**
-  1. `ToolSearch(query: "select:mcp__serena__activate_project")` でスキーマをロードする
-  2. スキーマがロードされてから `mcp__serena__activate_project({ project_name: "vetol" })` を呼び出す
+  1. `ToolSearch(query: "select:mcp__serena__activate_project")` を実行する
+  2. `mcp__serena__activate_project({ project_name: "vetol" })` を呼び出す
   3. Serena MCPのinitial_instructionは設定していないので無視して良いです
 
 ### 2. Implement
@@ -74,7 +78,7 @@ color: cyan
 
 - ファイルを作成する場合、次の優先度でツールを使用してください
   - 最優先: `touch` コマンド -> `Read` ツール -> `Edit` ツールの順でファイルを作成してください
-  - 禁止: `Write` ツール
+  - 禁止: `Write` ツール, `echo "" > filename`, `cat > filename` コマンドの使用は禁止されています
 
 ### Edit
 
