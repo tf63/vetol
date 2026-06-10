@@ -8,8 +8,15 @@ import (
 
 // ConfigFile represents the structure of a JSON configuration file.
 type ConfigFile struct {
-	Mode  string   `json:"mode"`
-	Rules []string `json:"rules"`
+	Mode  string     `json:"mode"`
+	Rules []RuleFile `json:"rules"`
+}
+
+// RuleFile represents a single rule in the JSON configuration file.
+type RuleFile struct {
+	Command string   `json:"command"`
+	Include []string `json:"include"`
+	Exclude []string `json:"exclude"`
 }
 
 // LoadConfigFromFile loads a configuration from a JSON file.
@@ -29,5 +36,13 @@ func LoadConfigFromFile(filePath string) (Config, error) {
 		return Config{}, fmt.Errorf("invalid mode: %s", configFile.Mode)
 	}
 
-	return NewConfig(mode, configFile.Rules), nil
+	rules := make([]Rule, len(configFile.Rules))
+	for i, rf := range configFile.Rules {
+		rules[i] = Rule(rf)
+	}
+
+	return Config{
+		Mode:  mode,
+		Rules: rules,
+	}, nil
 }
