@@ -4,11 +4,10 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"strings"
 
-	"github.com/tf63/vetol/internal/logger"
 	"github.com/tf63/vetol/internal/validator"
-	"github.com/tf63/vetol/pkg/rules"
+	"github.com/tf63/vetol/pkg/io"
+	"github.com/tf63/vetol/pkg/logger"
 )
 
 func main() {
@@ -27,10 +26,6 @@ func main() {
 	}
 
 	fs := flag.NewFlagSet("vetol", flag.ContinueOnError)
-	mode := fs.String("mode", "", "Security validation mode (allowlist or denylist)")
-	modeShort := fs.String("m", "", "Short flag for mode")
-	rulesStr := fs.String("rules", "", "Comma-separated list of rules")
-	rulesShort := fs.String("r", "", "Short flag for rules")
 	configPath := fs.String("config", "", "Path to configuration file")
 
 	if err := fs.Parse(os.Args[1:]); err != nil {
@@ -38,12 +33,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Handle short flags
-	if *modeShort != "" {
-		mode = modeShort
-	}
-	if *rulesShort != "" {
-		rulesStr = rulesShort
+	// Validate --config is provided
+	if *configPath == "" {
+		logger.Error("--config is required")
+		printUsage()
+		os.Exit(1)
 	}
 
 	// Get positional argument (command string)
@@ -56,42 +50,11 @@ func main() {
 
 	commandStr := args[0]
 
-	// Validate configuration options
-	if *configPath != "" && (*mode != "" || *rulesStr != "") {
-		logger.Error("cannot mix --config with --mode/--rules")
-		printUsage()
-		os.Exit(1)
-	}
-
-	if *configPath == "" && (*mode == "" || *rulesStr == "") {
-		logger.Error("either --config or both --mode and --rules are required")
-		printUsage()
-		os.Exit(1)
-	}
-
-	// Validate mode
-	if *configPath == "" {
-		modeValue := rules.Mode(*mode)
-		if modeValue != rules.ModeAllowlist && modeValue != rules.ModeDenylist {
-			logger.Error("invalid mode", "mode", *mode)
-			os.Exit(1)
-		}
-	}
-
 	// Load configuration
-	var cfg rules.Config
-	var err error
-
-	if *configPath != "" {
-		cfg, err = rules.LoadConfigFromFile(*configPath)
-		if err != nil {
-			logger.Error("failed to load config", "error", err)
-			os.Exit(1)
-		}
-	} else {
-		rulesList := strings.Split(*rulesStr, ",")
-		modeValue := rules.Mode(*mode)
-		cfg = rules.NewConfig(modeValue, rulesList)
+	cfg, err := io.LoadConfigFromFile(*configPath)
+	if err != nil {
+		logger.Error("failed to load config", "error", err)
+		os.Exit(1)
 	}
 
 	// Validate command
@@ -113,39 +76,46 @@ func main() {
 }
 
 func printUsage() {
-	fmt.Fprintf(os.Stderr, `Vetol - Security command validator
+	fmt.Fprintf(os.Stderr, `Vetol - Vet agent tools
 
-Usage: vetol [OPTIONS] <COMMAND_STRING>
+Usage: vetol --config <PATH> <COMMAND_STRING>
 
 Options:
-  --mode, -m <mode>        Security validation mode (allowlist or denylist)
-  --rules, -r <RULES>      Comma-separated list of rules
-  --config <PATH>          Path to configuration file (JSON)
+  --config <PATH>          Path to configuration file (JSON) - REQUIRED
   --help, -h              Show this help message
 
 Arguments:
   <COMMAND_STRING>         The bash command string to validate
 
-Configuration Methods (use one):
-  1. With --mode and --rules flags:
-     vetol -m allowlist -r "ls,cat,grep" "ls -la /tmp"
-
-  2. With --config file:
-     vetol --config rules.json "docker compose exec app rm -rf /"
+Configuration File Format:
+{
+  "mode": "allowlist",
+  "rules": [
+    {
+      "command": "grep",
+      "include": ["-r"],
+      "exclude": ["-rule"]
+    }
+  ]
+}
 
 Mode Options:
   allowlist               Only allow explicitly permitted commands
   denylist               Allow all commands except explicitly forbidden ones
 
-Rule Format:
-  Single command:         ls, cat, rm
-  Command sequence:       docker compose exec app rm, docker run rm -rf
-  Comma-separated:        ls,cat,grep or "docker compose exec app,cat"
+Rule Fields:
+  command                 Command name (prefix matching)
+  include                 Array of allowed options or patterns
+  exclude                 Array of forbidden options or patterns
+
+Flag Types:
+  -X                      Short flag (character containment matching)
+  --flag                  Long flag (exact match)
+  flag                    Option without prefix (exact match)
 
 Examples:
-  vetol -m allowlist -r "ls,cat,grep" "ls -la /tmp"
-  vetol -m denylist -r "rm,dd" "cat /etc/passwd"
-  vetol --config rules.json "docker compose exec app rm -rf /"
+  vetol --config vetol.json "grep -r pattern file.txt"
+  vetol --config vetol.json "docker compose exec app ls -la"
   vetol --help             Show this help message
 `)
 }

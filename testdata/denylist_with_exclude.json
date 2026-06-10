@@ -4,7 +4,7 @@
     {
       "command": "pwd",
       "include": [],
-      "exclude": []
+      "exclude": ["-P"]
     },
     {
       "command": "echo",
@@ -14,12 +14,12 @@
     {
       "command": "grep",
       "include": ["-r"],
-      "exclude": []
+      "exclude": ["-q"]
     },
     {
       "command": "ls",
       "include": ["-la"],
-      "exclude": []
+      "exclude": ["-i"]
     }
   ]
 }

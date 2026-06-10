@@ -1,4 +1,25 @@
 {
   "mode": "allowlist",
-  "rules": ["pwd", "echo hello", "grep -r", "ls -la"]
+  "rules": [
+    {
+      "command": "pwd",
+      "include": [],
+      "exclude": []
+    },
+    {
+      "command": "echo",
+      "include": ["hello"],
+      "exclude": []
+    },
+    {
+      "command": "grep",
+      "include": ["-r"],
+      "exclude": []
+    },
+    {
+      "command": "ls",
+      "include": ["-la"],
+      "exclude": []
+    }
+  ]
 }

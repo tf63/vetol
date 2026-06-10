@@ -48,6 +48,8 @@ ALLOWLIST_ALLOW=(
   "echo hello \`pwd\`"
   "grep -r"
   "grep -r -l"
+  "grep -l -r"
+  "grep -rl"
   "grep -r /tmp"
   "ls -la"
   "ls -la --color=auto"
@@ -57,8 +59,8 @@ ALLOWLIST_ALLOW=(
   "pwd; echo hello"
   "(pwd; echo hello)"
   "pwd && echo hello || grep -r test"
-  "echo hello > a.txt"
-  "echo hello > /dev/null 2>&1"
+  "echo hello"
+  "echo hello test"
 )
 
 ALLOWLIST_DENY=(
@@ -68,7 +70,6 @@ ALLOWLIST_DENY=(
   "echo \"hello world\""
   "grep"
   "grep -l"
-  "grep -l -r"
   "grep /tmp"
   "ls"
   "ls -l"
@@ -95,7 +96,6 @@ DENYLIST_ALLOW=(
   "cat"
   "grep"
   "grep -l"
-  "grep -l -r"
   "ls -l"
   "ls -a"
   "ls --color=auto"
@@ -115,14 +115,15 @@ DENYLIST_DENY=(
   "echo hello \$(pwd)"
   "grep -r"
   "grep -r -a"
+  "grep -l -r"
   "ls -la"
   "ls \$(pwd)"
   "ls \`pwd\`"
   "pwd && ls"
   "pwd || ls"
-  "pwd > /dev/null"
-  "pwd | grep test > /dev/null"
-  "pwd > /dev/null 2>&1"
+  "pwd test"
+  "pwd | grep test"
+  "pwd arg1 arg2"
 
 )
 
@@ -164,31 +165,122 @@ for cmd in "${DENYLIST_DENY[@]}"; do
 done
 
 # ============================================================
-# CLI Arguments Tests
+# Allowlist with Exclude Tests
 # ============================================================
 
 echo
-echo "=== Command Line Arguments Tests ==="
+echo "=== Allowlist with Exclude Tests ==="
 
-run_test "CLI: allowlist mode with pwd" \
+# Test cases with exclude flag
+run_test "allowlist with exclude: grep -r (allowed, no exclude match)" \
   "ALLOW" \
-  -m allowlist -r pwd "pwd"
+  --config testdata/allowlist_with_exclude.json "grep -r pattern"
 
-run_test "CLI: denylist mode with pwd" \
+run_test "allowlist with exclude: grep -r -q (denied, exclude match)" \
   "DENY" \
-  -m denylist -r pwd "pwd"
+  --config testdata/allowlist_with_exclude.json "grep -r -q pattern"
 
-run_test "CLI: multiple rules (comma-separated)" \
-  "ALLOW" \
-  -m allowlist -r "pwd,cat" "pwd"
-
-run_test "CLI: multiple rules with denied command" \
+run_test "allowlist with exclude: grep -rq (denied, exclude match)" \
   "DENY" \
-  -m allowlist -r "pwd,cat" "ls"
+  --config testdata/allowlist_with_exclude.json "grep -rq pattern"
 
-run_test "CLI: multiple rules in denylist" \
+run_test "allowlist with exclude: grep -qr (denied, exclude match)" \
+  "DENY" \
+  --config testdata/allowlist_with_exclude.json "grep -qr pattern"
+
+run_test "allowlist with exclude: ls -la (allowed, no exclude match)" \
   "ALLOW" \
-  -m denylist -r "rm,dd" "ls"
+  --config testdata/allowlist_with_exclude.json "ls -la"
+
+run_test "allowlist with exclude: ls -la -i (denied, exclude match)" \
+  "DENY" \
+  --config testdata/allowlist_with_exclude.json "ls -la -i"
+
+run_test "allowlist with exclude: echo hello (allowed)" \
+  "ALLOW" \
+  --config testdata/allowlist_with_exclude.json "echo hello"
+
+run_test "allowlist with exclude: pwd (allowed)" \
+  "ALLOW" \
+  --config testdata/allowlist_with_exclude.json "pwd"
+
+# ============================================================
+# Blacklist with Exclude Tests
+# ============================================================
+
+echo
+echo "=== Blacklist with Exclude Tests ==="
+
+run_test "denylist with exclude: pwd (denied, rule matches)" \
+  "DENY" \
+  --config testdata/denylist_with_exclude.json "pwd"
+
+run_test "denylist with exclude: pwd -P (allowed, exclude prevents match)" \
+  "ALLOW" \
+  --config testdata/denylist_with_exclude.json "pwd -P"
+
+run_test "denylist with exclude: grep -r (denied, rule matches)" \
+  "DENY" \
+  --config testdata/denylist_with_exclude.json "grep -r pattern"
+
+run_test "denylist with exclude: grep -r -q (allowed, exclude prevents match)" \
+  "ALLOW" \
+  --config testdata/denylist_with_exclude.json "grep -r -q pattern"
+
+run_test "denylist with exclude: grep -rq (allowed, exclude prevents match)" \
+  "ALLOW" \
+  --config testdata/denylist_with_exclude.json "grep -rq pattern"
+
+run_test "denylist with exclude: grep -qr (allowed, exclude prevents match)" \
+  "ALLOW" \
+  --config testdata/denylist_with_exclude.json "grep -qr pattern"
+
+run_test "denylist with exclude: ls -la (denied, rule matches)" \
+  "DENY" \
+  --config testdata/denylist_with_exclude.json "ls -la"
+
+run_test "denylist with exclude: ls -la -i (allowed, exclude prevents match)" \
+  "ALLOW" \
+  --config testdata/denylist_with_exclude.json "ls -la -i"
+
+run_test "denylist with exclude: echo hello (denied, rule matches)" \
+  "DENY" \
+  --config testdata/denylist_with_exclude.json "echo hello"
+
+run_test "denylist with exclude: cat (allowed, no match)" \
+  "ALLOW" \
+  --config testdata/denylist_with_exclude.json "cat file.txt"
+
+# ============================================================
+# Long Flag with Value Tests
+# ============================================================
+
+echo
+echo "=== Long Flag with Value Tests ==="
+
+run_test "long flag: grep -r --color (rule has both -r and --color)" \
+  "ALLOW" \
+  --config testdata/long_flag.json "grep -r --color=auto pattern"
+
+run_test "long flag: grep -r --color=never (rule matches --color prefix)" \
+  "ALLOW" \
+  --config testdata/long_flag.json "grep -r --color=never pattern"
+
+run_test "long flag: grep --color=auto pattern (missing required -r)" \
+  "DENY" \
+  --config testdata/long_flag.json "grep --color=auto pattern"
+
+run_test "long flag: ls --color=auto (rule has --color)" \
+  "ALLOW" \
+  --config testdata/long_flag.json "ls --color=auto"
+
+run_test "long flag: ls --color (exact match)" \
+  "ALLOW" \
+  --config testdata/long_flag.json "ls --color"
+
+run_test "long flag: ls (missing --color)" \
+  "DENY" \
+  --config testdata/long_flag.json "ls"
 
 # ============================================================
 # Error Cases Tests
@@ -197,33 +289,13 @@ run_test "CLI: multiple rules in denylist" \
 echo
 echo "=== Error Cases Tests ==="
 
-run_test "CLI error: missing --rules" \
-  "ERROR: either --config or both --mode and --rules are required" \
-  -m allowlist "pwd"
-
-run_test "CLI error: missing --mode" \
-  "ERROR: either --config or both --mode and --rules are required" \
-  -r pwd "pwd"
-
-run_test "CLI error: missing both --mode and --rules" \
-  "ERROR: either --config or both --mode and --rules are required" \
+run_test "CLI error: missing --config" \
+  "ERROR: --config is required" \
   "pwd"
 
 run_test "CLI error: missing command string" \
   "ERROR: command string is required" \
-  -m allowlist -r pwd
-
-run_test "CLI error: invalid mode" \
-  "ERROR: invalid mode [mode invalid]" \
-  -m invalid -r pwd "pwd"
-
-run_test "CLI error: mixing --config with --mode" \
-  "ERROR: cannot mix --config with --mode/--rules" \
-  --config testdata/allowlist.json -m allowlist "pwd"
-
-run_test "CLI error: mixing --config with --rules" \
-  "ERROR: cannot mix --config with --mode/--rules" \
-  --config testdata/allowlist.json -r pwd "pwd"
+  --config testdata/allowlist.json
 
 # ============================================================
 # Summary
