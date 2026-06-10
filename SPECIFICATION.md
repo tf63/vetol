@@ -44,119 +44,138 @@ Simple string matching-based validation is insufficient and can be bypassed:
 The main entry point that provides bash command validation functionality.
 
 ```bash
-vetol [OPTIONS] <COMMAND_STRING>
+vetol --config <PATH> <COMMAND_STRING>
 ```
-
-### Subcommands
-
-- `check` - Analyze and validate a bash command string
-
-## Usage
-
-### Check Command with Allowlist Mode
-
-Parse and validate a bash command string against an allowed command list.
-
-```bash
-# Single commands
-vetol check --mode allowlist --rules ls,cat,grep "ls -la /tmp"
-
-# Multi-command sequences
-vetol check -m allowlist -r "docker compose exec app go fmt,ls,cat" "docker compose exec app go fmt ./..."
-```
-
-### Check Command with Denylist Mode
-
-Parse and validate a bash command string against a forbidden command list.
-
-```bash
-# Single commands
-vetol check --mode denylist --rules rm,dd,mkfs "cat /etc/passwd"
-
-# Multi-command sequences
-vetol check -m denylist -r "docker compose exec app rm,rm -rf" "docker compose exec app rm -rf /"
-```
-
-### Rule Format
-
-Rules are comma-separated, where each rule can be:
-
-- **Single command**: `ls`, `cat`, `rm`, `dd`
-- **Multi-command sequence**: `docker compose exec app rm`, `docker compose exec app go fmt`
-
-Rules use **prefix matching**: a rule matches a command sequence if the command sequence starts with all elements of the rule.
-
-**Prefix Matching Examples:**
-
-- Rule `echo` matches: `echo`, `echo Hello`, `echo 'Hello World'` ✓
-- Rule `ls -la` matches: `ls -la`, `ls -la /tmp` ✓
-- Rule `docker compose exec app rm` matches: `docker compose exec app rm -rf /` ✓
-- Rule `docker compose exec app rm` does NOT match: `docker rm -rf /` ✗
-- Rule `docker compose exec app rm` does NOT match: `docker compose exec app go fmt` ✗
-- Rule `rm` does NOT match: `rmdir` ✗
 
 ### Options
 
-- `--mode <mode>`, `-m <mode>`: Security validation mode (required)
-  - `allowlist`: Only allow explicitly permitted commands
-  - `denylist`: Allow all commands except explicitly forbidden ones
-- `--rules <RULES>`, `-r <RULES>`: Comma-separated list of rules for validation (required)
-  - Each rule can be a single command or a space-separated sequence of commands
-  - In allowlist mode: list of allowed command/sequences
-  - In denylist mode: list of forbidden command/sequences
+- `--config <PATH>`: Path to configuration file (JSON format) - REQUIRED
 - `<COMMAND_STRING>`: The bash command string to validate (positional argument)
 
-## Config
-
-### Configuration Methods
-
-Rules can be specified via one of two methods (not both):
-
-1. **Command-line options**: `--mode` and `--rules`
-2. **Configuration file**: `--config` (JSON format only)
-
-If `--config` is specified, `--mode` and `--rules` must NOT be provided. Specifying both will result in an error.
+## Configuration
 
 ### Configuration File Format (JSON)
+
+Configuration is provided via a JSON file with the following structure:
+
+```json
+{
+  "mode": "allowlist",
+  "rules": [
+    {
+      "command": "grep",
+      "include": ["-r"],
+      "exclude": []
+    },
+    {
+      "command": "ls",
+      "include": ["-la"],
+      "exclude": ["-i"]
+    },
+    {
+      "command": "docker compose"
+    }
+  ]
+}
+```
+
+#### Rule Fields
+
+- **command** (string, required): The command name or prefix (space-separated for multi-word commands like `docker compose`)
+- **include** (array of strings, optional): Patterns or flags that MUST be present for the rule to match
+  - If specified, all patterns in the include list must match
+  - If empty or omitted, no include constraints apply
+- **exclude** (array of strings, optional): Patterns or flags that MUST NOT be present for the rule to match
+  - If any pattern in the exclude list matches, the rule does not match
+  - If empty or omitted, no exclude constraints apply
+
+#### Pattern Matching Rules
+
+**Short Flags** (starting with `-` but not `--`):
+
+- All characters in the pattern must be present in the command
+- Characters can be combined in a single option or spread across multiple options
+- Examples:
+  - Pattern `-r` matches: `-r`, `-rl`, `-r -l`
+  - Pattern `-la` matches: `-la`, `-l -a`
+
+**Long Flags** (starting with `--`):
+
+- Exact match or prefix match with `=` for values
+- Examples:
+  - Pattern `--color` matches: `--color`, `--color=auto`
+  - Pattern `--color=auto` matches only: `--color=auto`
+
+**Non-Flag Patterns** (no prefix):
+
+- Exact match required
+- Examples:
+  - Pattern `file.txt` matches only: `file.txt`
+
+#### Matching Logic
+
+1. **Command Matching**: Command sequence must start with the rule's command
+2. **Include Matching**: If include patterns are specified, ALL must match
+3. **Exclude Matching**: If exclude patterns are specified, NONE must match
+4. A rule matches only if command matches AND include matches AND exclude does NOT match
+
+### Usage Examples
+
+**Allowlist with include/exclude:**
+
+```bash
+vetol --config allowlist.json "grep -r pattern /tmp"
+```
+
+Where `allowlist.json` contains:
+
+```json
+{
+  "mode": "allowlist",
+  "rules": [
+    {
+      "command": "grep",
+      "include": ["-r"]
+    },
+    {
+      "command": "ls",
+      "include": ["-la"],
+      "exclude": ["-i"]
+    }
+  ]
+}
+```
+
+**Denylist with complex rules:**
+
+```bash
+vetol --config denylist.json "docker compose exec app rm -rf /"
+```
+
+Where `denylist.json` contains:
 
 ```json
 {
   "mode": "denylist",
   "rules": [
-    "docker compose exec app rm",
-    "docker compose exec app mkfs",
-    "docker run rm -rf",
-    "rm -rf",
-    "dd"
+    {
+      "command": "rm",
+      "exclude": ["-i"]
+    },
+    {
+      "command": "dd"
+    },
+    {
+      "command": "docker compose exec app rm"
+    }
   ]
 }
 ```
 
-### Usage Examples
-
-**Using command-line options:**
-
-```bash
-vetol check -m denylist -r "rm,dd" "cat /etc/passwd"
-```
-
-**Using configuration file:**
-
-```bash
-vetol check --config rules.json "docker compose exec app rm -rf /"
-```
-
-**Error cases:**
-
-```bash
-# ERROR: Cannot mix --config with --mode/--rules
-vetol check --config rules.json -m denylist "echo test"
-```
-
 ### Mode Options
 
-- **allowlist**: Only allow explicitly permitted commands/sequences. Commands/sequences not in the allowlist are rejected.
-- **denylist**: Allow all commands/sequences except those explicitly forbidden. Commands/sequences in the denylist are rejected.
+- **allowlist**: Only allow explicitly permitted commands. Commands not matching any rule are rejected.
+- **denylist**: Allow all commands except those explicitly forbidden. Commands matching any rule are rejected.
 
 ## Architecture
 
@@ -165,22 +184,57 @@ vetol check --config rules.json -m denylist "echo test"
 ```
 vetol/
 ├── cmd/
-│   └── main.go              # CLI entry point
+│   └── vetol/
+│       └── main.go              # CLI entry point
 ├── internal/
-│   ├── parser/              # Bash AST parsing logic
-│   └── validator/           # Security validation logic
+│   ├── parser/                  # Bash AST parsing logic
+│   ├── rules/                   # Rule management (internal use only)
+│   │   ├── rules.go             # Rule struct and matching logic
+│   │   ├── rules_test.go        # Rule tests
+│   │   ├── config.go            # Config struct and validation methods
+│   │   └── config_test.go       # Config tests
+│   └── validator/               # Security validation logic
 ├── pkg/
-│   └── rules/               # Rule management and configuration
+│   ├── io/
+│   │   └── config.go            # Configuration file loading (JSON)
+│   └── logger/                  # Logging utilities
+├── tests/
+│   └── test.sh                  # Integration tests
+├── testdata/                    # Test configuration files
 ├── go.mod
 └── go.sum
 ```
 
-## Development Roadmap
+### Module Organization
 
-- [ ] Setup go.mod with mvdan.cc/sh/v3/syntax dependency
-- [ ] Implement AST parser wrapper
-- [ ] Implement allowlist/denylist validator
-- [ ] Create CLI command structure
-- [ ] Add configuration file support
-- [ ] Write comprehensive tests
-- [ ] Add documentation and examples
+- **cmd/vetol**: Entry point that orchestrates configuration loading and validation
+- **pkg/io**: Handles JSON configuration file parsing
+  - `LoadConfigFromFile()`: Loads configuration from JSON files
+- **pkg/logger**: Logging utilities (public API)
+  - `Error()`: Log error-level messages
+  - `Warn()`: Log warning-level messages
+  - `Info()`: Log informational messages
+  - `Debug()`: Log debug-level messages
+- **internal/rules**: Core rule matching and validation logic (internal use)
+  - `Rule.Matches()`: Checks if a command matches a rule
+  - `Config.IsValid()`: Validates a command against a configuration
+- **internal/parser**: AST parsing for bash commands
+- **internal/validator**: High-level command validation orchestration
+
+## Implementation Status
+
+### Completed Features
+
+- [x] Setup go.mod with mvdan.cc/sh/v3/syntax dependency
+- [x] Implement AST parser wrapper for bash command parsing
+- [x] Implement allowlist/denylist validator with include/exclude patterns
+- [x] Create CLI command structure with configuration file support
+- [x] Add JSON configuration file support
+- [x] Implement comprehensive rule matching system
+  - [x] Command prefix matching for single and multi-word commands
+  - [x] Short flag pattern matching (character containment)
+  - [x] Long flag pattern matching (prefix with = support)
+  - [x] Non-flag pattern exact matching
+  - [x] Include and exclude constraints
+- [x] Write comprehensive tests (100% coverage)
+- [x] Add documentation and specifications
