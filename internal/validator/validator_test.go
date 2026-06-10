@@ -7,7 +7,12 @@ import (
 )
 
 func TestNewValidator(t *testing.T) {
-	config := rules.NewConfig(rules.ModeAllowlist, []string{"ls"})
+	config := rules.Config{
+		Mode: rules.ModeAllowlist,
+		Rules: []rules.Rule{
+			{Command: "ls"},
+		},
+	}
 	v := NewValidator(&config)
 
 	// Verify that NewValidator creates a valid Validator
@@ -23,153 +28,218 @@ func TestNewValidator(t *testing.T) {
 func TestValidate(t *testing.T) {
 	tests := []struct {
 		name                  string
-		mode                  rules.Mode
-		allowedRules          []string
+		config                rules.Config
 		commandStr            string
 		expectedValid         bool
 		expectedViolatedCount int
 		wantErr               bool
 	}{
 		{
-			name:                  "allowlist mode - allowed single command",
-			mode:                  rules.ModeAllowlist,
-			allowedRules:          []string{"ls"},
+			name: "allowlist mode - allowed single command",
+			config: rules.Config{
+				Mode: rules.ModeAllowlist,
+				Rules: []rules.Rule{
+					{Command: "ls"},
+				},
+			},
 			commandStr:            "ls",
 			expectedValid:         true,
 			expectedViolatedCount: 0,
 			wantErr:               false,
 		},
 		{
-			name:                  "allowlist mode - allowed command with args",
-			mode:                  rules.ModeAllowlist,
-			allowedRules:          []string{"ls -la /tmp"},
+			name: "allowlist mode - allowed command with args",
+			config: rules.Config{
+				Mode: rules.ModeAllowlist,
+				Rules: []rules.Rule{
+					{Command: "ls", Include: []string{"-la", "/tmp"}},
+				},
+			},
 			commandStr:            "ls -la /tmp",
 			expectedValid:         true,
 			expectedViolatedCount: 0,
 			wantErr:               false,
 		},
 		{
-			name:                  "allowlist mode - forbidden command",
-			mode:                  rules.ModeAllowlist,
-			allowedRules:          []string{"ls"},
-			commandStr:            "rm file.txt",
+			name: "allowlist mode - forbidden command",
+			config: rules.Config{
+				Mode: rules.ModeAllowlist,
+				Rules: []rules.Rule{
+					{Command: "ls"},
+				},
+			},
+			commandStr:            "cat file.txt",
 			expectedValid:         false,
 			expectedViolatedCount: 1,
 			wantErr:               false,
 		},
 		{
-			name:                  "allowlist mode - multiple commands piped",
-			mode:                  rules.ModeAllowlist,
-			allowedRules:          []string{"ls", "grep test"},
+			name: "allowlist mode - multiple commands piped",
+			config: rules.Config{
+				Mode: rules.ModeAllowlist,
+				Rules: []rules.Rule{
+					{Command: "ls"},
+					{Command: "grep", Include: []string{"test"}},
+				},
+			},
 			commandStr:            "ls | grep test",
 			expectedValid:         true,
 			expectedViolatedCount: 0,
 			wantErr:               false,
 		},
 		{
-			name:                  "allowlist mode - one of multiple piped commands not allowed",
-			mode:                  rules.ModeAllowlist,
-			allowedRules:          []string{"ls"},
+			name: "allowlist mode - one of multiple piped commands not allowed",
+			config: rules.Config{
+				Mode: rules.ModeAllowlist,
+				Rules: []rules.Rule{
+					{Command: "ls"},
+				},
+			},
 			commandStr:            "ls | grep test",
 			expectedValid:         false,
 			expectedViolatedCount: 1,
 			wantErr:               false,
 		},
 		{
-			name:                  "denylist mode - forbidden command",
-			mode:                  rules.ModeDenylist,
-			allowedRules:          []string{"rm file.txt"},
-			commandStr:            "rm file.txt",
+			name: "denylist mode - forbidden command",
+			config: rules.Config{
+				Mode: rules.ModeDenylist,
+				Rules: []rules.Rule{
+					{Command: "cat", Include: []string{"file.txt"}},
+				},
+			},
+			commandStr:            "cat file.txt",
 			expectedValid:         false,
 			expectedViolatedCount: 1,
 			wantErr:               false,
 		},
 		{
-			name:                  "denylist mode - allowed command",
-			mode:                  rules.ModeDenylist,
-			allowedRules:          []string{"rm"},
+			name: "denylist mode - allowed command",
+			config: rules.Config{
+				Mode: rules.ModeDenylist,
+				Rules: []rules.Rule{
+					{Command: "cat"},
+				},
+			},
 			commandStr:            "ls",
 			expectedValid:         true,
 			expectedViolatedCount: 0,
 			wantErr:               false,
 		},
 		{
-			name:                  "denylist mode - multiple forbidden commands",
-			mode:                  rules.ModeDenylist,
-			allowedRules:          []string{"rm file.txt"},
-			commandStr:            "ls && rm file.txt",
+			name: "denylist mode - multiple forbidden commands",
+			config: rules.Config{
+				Mode: rules.ModeDenylist,
+				Rules: []rules.Rule{
+					{Command: "cat", Include: []string{"file.txt"}},
+				},
+			},
+			commandStr:            "ls && cat file.txt",
 			expectedValid:         false,
 			expectedViolatedCount: 1,
 			wantErr:               false,
 		},
 		{
-			name:                  "empty command string",
-			mode:                  rules.ModeAllowlist,
-			allowedRules:          []string{"ls"},
+			name: "empty command string",
+			config: rules.Config{
+				Mode: rules.ModeAllowlist,
+				Rules: []rules.Rule{
+					{Command: "ls"},
+				},
+			},
 			commandStr:            "",
 			expectedValid:         true,
 			expectedViolatedCount: 0,
 			wantErr:               false,
 		},
 		{
-			name:                  "invalid syntax - parsing error",
-			mode:                  rules.ModeAllowlist,
-			allowedRules:          []string{"ls"},
+			name: "invalid syntax - parsing error",
+			config: rules.Config{
+				Mode: rules.ModeAllowlist,
+				Rules: []rules.Rule{
+					{Command: "ls"},
+				},
+			},
 			commandStr:            "ls (",
 			expectedValid:         false,
 			expectedViolatedCount: 0,
 			wantErr:               true,
 		},
 		{
-			name:                  "command substitution with allowed commands",
-			mode:                  rules.ModeAllowlist,
-			allowedRules:          []string{"echo", "ls"},
+			name: "command substitution with allowed commands",
+			config: rules.Config{
+				Mode: rules.ModeAllowlist,
+				Rules: []rules.Rule{
+					{Command: "echo"},
+					{Command: "ls"},
+				},
+			},
 			commandStr:            "echo $(ls)",
 			expectedValid:         true,
 			expectedViolatedCount: 0,
 			wantErr:               false,
 		},
 		{
-			name:                  "command substitution with forbidden command",
-			mode:                  rules.ModeAllowlist,
-			allowedRules:          []string{"echo"},
-			commandStr:            "echo $(rm file.txt)",
+			name: "command substitution with forbidden command",
+			config: rules.Config{
+				Mode: rules.ModeAllowlist,
+				Rules: []rules.Rule{
+					{Command: "echo"},
+				},
+			},
+			commandStr:            "echo $(cat file.txt)",
 			expectedValid:         false,
 			expectedViolatedCount: 1,
 			wantErr:               false,
 		},
 		{
-			name:                  "allowlist with prefix matching - command with quoted args",
-			mode:                  rules.ModeAllowlist,
-			allowedRules:          []string{"echo"},
+			name: "allowlist with prefix matching - command with quoted args",
+			config: rules.Config{
+				Mode: rules.ModeAllowlist,
+				Rules: []rules.Rule{
+					{Command: "echo"},
+				},
+			},
 			commandStr:            "echo 'Hello World'",
 			expectedValid:         true,
 			expectedViolatedCount: 0,
 			wantErr:               false,
 		},
 		{
-			name:                  "allowlist with prefix matching - command with multiple args",
-			mode:                  rules.ModeAllowlist,
-			allowedRules:          []string{"ls -la"},
+			name: "allowlist with prefix matching - command with multiple args",
+			config: rules.Config{
+				Mode: rules.ModeAllowlist,
+				Rules: []rules.Rule{
+					{Command: "ls", Include: []string{"-la"}},
+				},
+			},
 			commandStr:            "ls -la /tmp",
 			expectedValid:         true,
 			expectedViolatedCount: 0,
 			wantErr:               false,
 		},
 		{
-			name:                  "denylist with prefix matching - forbidden command with args",
-			mode:                  rules.ModeDenylist,
-			allowedRules:          []string{"rm"},
-			commandStr:            "rm -rf /",
+			name: "denylist with prefix matching - forbidden command with args",
+			config: rules.Config{
+				Mode: rules.ModeDenylist,
+				Rules: []rules.Rule{
+					{Command: "cat"},
+				},
+			},
+			commandStr:            "cat -n file.txt",
 			expectedValid:         false,
 			expectedViolatedCount: 1,
 			wantErr:               false,
 		},
 		{
-			name:                  "denylist with prefix matching - different command not blocked",
-			mode:                  rules.ModeDenylist,
-			allowedRules:          []string{"rm"},
-			commandStr:            "rmdir /tmp",
+			name: "denylist with prefix matching - different command not blocked",
+			config: rules.Config{
+				Mode: rules.ModeDenylist,
+				Rules: []rules.Rule{
+					{Command: "cat"},
+				},
+			},
+			commandStr:            "catalog /tmp",
 			expectedValid:         true,
 			expectedViolatedCount: 0,
 			wantErr:               false,
@@ -178,8 +248,7 @@ func TestValidate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			config := rules.NewConfig(tt.mode, tt.allowedRules)
-			v := NewValidator(&config)
+			v := NewValidator(&tt.config)
 
 			result, err := v.Validate(tt.commandStr)
 
@@ -210,31 +279,37 @@ func TestValidate(t *testing.T) {
 func TestValidateResultFields(t *testing.T) {
 	tests := []struct {
 		name               string
-		mode               rules.Mode
-		allowedRules       []string
+		config             rules.Config
 		commandStr         string
 		shouldHaveViolated bool
 	}{
 		{
-			name:               "result fields for valid command",
-			mode:               rules.ModeAllowlist,
-			allowedRules:       []string{"ls"},
+			name: "result fields for valid command",
+			config: rules.Config{
+				Mode: rules.ModeAllowlist,
+				Rules: []rules.Rule{
+					{Command: "ls"},
+				},
+			},
 			commandStr:         "ls",
 			shouldHaveViolated: false,
 		},
 		{
-			name:               "result fields for invalid command",
-			mode:               rules.ModeAllowlist,
-			allowedRules:       []string{"ls"},
-			commandStr:         "rm file.txt",
+			name: "result fields for invalid command",
+			config: rules.Config{
+				Mode: rules.ModeAllowlist,
+				Rules: []rules.Rule{
+					{Command: "ls"},
+				},
+			},
+			commandStr:         "cat file.txt",
 			shouldHaveViolated: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			config := rules.NewConfig(tt.mode, tt.allowedRules)
-			v := NewValidator(&config)
+			v := NewValidator(&tt.config)
 
 			result, err := v.Validate(tt.commandStr)
 			if err != nil {
@@ -308,32 +383,46 @@ func TestFormatCommands(t *testing.T) {
 func TestValidateMultipleSequences(t *testing.T) {
 	tests := []struct {
 		name              string
-		mode              rules.Mode
-		allowedRules      []string
+		config            rules.Config
 		commandStr        string
 		expectedViolated  bool
 		expectedSequences int
 	}{
 		{
-			name:              "two commands with && both allowed",
-			mode:              rules.ModeAllowlist,
-			allowedRules:      []string{"ls", "cat file.txt"},
+			name: "two commands with && both allowed",
+			config: rules.Config{
+				Mode: rules.ModeAllowlist,
+				Rules: []rules.Rule{
+					{Command: "ls"},
+					{Command: "cat", Include: []string{"file.txt"}},
+				},
+			},
 			commandStr:        "ls && cat file.txt",
 			expectedViolated:  false,
 			expectedSequences: 2,
 		},
 		{
-			name:              "two commands with && first forbidden",
-			mode:              rules.ModeAllowlist,
-			allowedRules:      []string{"cat"},
+			name: "two commands with && first forbidden",
+			config: rules.Config{
+				Mode: rules.ModeAllowlist,
+				Rules: []rules.Rule{
+					{Command: "cat"},
+				},
+			},
 			commandStr:        "ls && cat file.txt",
 			expectedViolated:  true,
 			expectedSequences: 2,
 		},
 		{
-			name:              "pipe with multiple commands",
-			mode:              rules.ModeAllowlist,
-			allowedRules:      []string{"ls", "grep test", "awk {print}"},
+			name: "pipe with multiple commands",
+			config: rules.Config{
+				Mode: rules.ModeAllowlist,
+				Rules: []rules.Rule{
+					{Command: "ls"},
+					{Command: "grep", Include: []string{"test"}},
+					{Command: "awk", Include: []string{"{print}"}},
+				},
+			},
 			commandStr:        "ls | grep test | awk '{print}'",
 			expectedViolated:  false,
 			expectedSequences: 3,
@@ -342,8 +431,7 @@ func TestValidateMultipleSequences(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			config := rules.NewConfig(tt.mode, tt.allowedRules)
-			v := NewValidator(&config)
+			v := NewValidator(&tt.config)
 
 			result, err := v.Validate(tt.commandStr)
 			if err != nil {
@@ -363,39 +451,49 @@ func TestValidateMultipleSequences(t *testing.T) {
 
 func TestValidateEdgeCases(t *testing.T) {
 	tests := []struct {
-		name         string
-		mode         rules.Mode
-		allowedRules []string
-		commandStr   string
-		expectedErr  bool
+		name        string
+		config      rules.Config
+		commandStr  string
+		expectedErr bool
 	}{
 		{
-			name:         "whitespace only",
-			mode:         rules.ModeAllowlist,
-			allowedRules: []string{"ls"},
-			commandStr:   "   ",
-			expectedErr:  false,
+			name: "whitespace only",
+			config: rules.Config{
+				Mode: rules.ModeAllowlist,
+				Rules: []rules.Rule{
+					{Command: "ls"},
+				},
+			},
+			commandStr:  "   ",
+			expectedErr: false,
 		},
 		{
-			name:         "command with tabs",
-			mode:         rules.ModeAllowlist,
-			allowedRules: []string{"ls"},
-			commandStr:   "ls\t-la",
-			expectedErr:  false,
+			name: "command with tabs",
+			config: rules.Config{
+				Mode: rules.ModeAllowlist,
+				Rules: []rules.Rule{
+					{Command: "ls"},
+				},
+			},
+			commandStr:  "ls\t-la",
+			expectedErr: false,
 		},
 		{
-			name:         "command with newlines",
-			mode:         rules.ModeAllowlist,
-			allowedRules: []string{"ls"},
-			commandStr:   "ls\n-la",
-			expectedErr:  false,
+			name: "command with newlines",
+			config: rules.Config{
+				Mode: rules.ModeAllowlist,
+				Rules: []rules.Rule{
+					{Command: "ls"},
+				},
+			},
+			commandStr:  "ls\n-la",
+			expectedErr: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			config := rules.NewConfig(tt.mode, tt.allowedRules)
-			v := NewValidator(&config)
+			v := NewValidator(&tt.config)
 
 			_, err := v.Validate(tt.commandStr)
 
