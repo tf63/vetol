@@ -16,9 +16,6 @@ if [ ! -f "$VETOL_CONFIG_FILE" ]; then
   exit 2
 fi
 
-cat "$COMMAND" > a.txt
-cat "INPUT: $INPUT" > b.txt
-
 if vetol --config "$VETOL_CONFIG_FILE" "$COMMAND" >/dev/null 2>&1; then
   exit 0
 fi
