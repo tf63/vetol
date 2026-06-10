@@ -1,0 +1,15 @@
+{
+  "mode": "allowlist",
+  "rules": [
+    {
+      "command": "grep",
+      "include": ["-r", "--color"],
+      "exclude": []
+    },
+    {
+      "command": "ls",
+      "include": ["--color"],
+      "exclude": []
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 {
-  "mode": "denylist",
+  "mode": "allowlist",
   "rules": [
     {
       "command": "pwd",
@@ -14,12 +14,12 @@
     {
       "command": "grep",
       "include": ["-r"],
-      "exclude": []
+      "exclude": ["-q"]
     },
     {
       "command": "ls",
       "include": ["-la"],
-      "exclude": []
+      "exclude": ["-i"]
     }
   ]
 }
