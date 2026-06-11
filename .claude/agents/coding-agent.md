@@ -41,11 +41,7 @@ color: cyan
 
 ### 1. Prepare
 
-- セッションの初めでは、Serena MCPを次の手順でアクティベートしてください
-  - **注意: SerenaはSkillではなく、MCPのツール呼び出しなので注意してください**
-  1. `ToolSearch(query: "select:mcp__serena__activate_project")` を実行する
-  2. `mcp__serena__activate_project({ project_name: "vetol" })` を呼び出す
-  3. Serena MCPのinitial_instructionは設定していないので無視して良いです
+- 特にありません
 
 ### 2. Implement
 

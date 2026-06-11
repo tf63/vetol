@@ -21,4 +21,4 @@ install-tools.run = [
 claude = "claude --agent coding-agent"
 
 # mcp
-serena = "uvx --from git+https://github.com/oraios/serena serena start-mcp-server --transport streamable-http --port 9088"
+serena = "uvx --from git+https://github.com/oraios/serena serena start-mcp-server --transport streamable-http --project vetol --port 9088"
